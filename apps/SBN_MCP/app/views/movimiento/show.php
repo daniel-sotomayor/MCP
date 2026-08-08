@@ -175,7 +175,7 @@ $colorEstado = match ($movimiento['estado']) {
             <div class="card" style="margin-top:1.5rem">
                 <div class="card-header"><h3>Documento del Acta</h3></div>
                 <div class="card-body" style="padding:1.25rem; background:#f1f5f9; border-top:1px solid #e2e8f0;">
-                    <div id="acta_document_content" style="background: #ffffff; padding: 0; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow-x: auto; max-width: 880px; margin: 0 auto;">
+                    <div id="acta_document_content" style="background: #ffffff; padding: 1.5rem; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow-x: auto; max-width: 880px; margin: 0 auto; color: #1e293b; font-size: 0.95rem; line-height: 1.6;">
                         <?= $contenidoActaSeguro ?>
                     </div>
                 </div>
@@ -276,6 +276,11 @@ $colorEstado = match ($movimiento['estado']) {
     opacity: 1 !important;
     transform: none !important;
 }
+#acta_document_content,
+#acta_document_content * {
+    color: #1e293b !important;
+    opacity: 1 !important;
+}
 </style>
 
 <?php if ($puedeAprobar && $esPendiente): ?>
@@ -285,6 +290,18 @@ $colorEstado = match ($movimiento['estado']) {
     const id   = <?= (int)$movimiento['id_movimiento'] ?>;
     const BASE = '<?= $base_url ?>';
     const csrf = '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>';
+
+    function setLoading(btn, loading) {
+        if (!btn) return;
+        if (loading) {
+            btn.disabled = true;
+            btn.dataset.originalText = btn.innerHTML;
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="30 60"/></svg> Procesando...';
+        } else {
+            btn.disabled = false;
+            if (btn.dataset.originalText) btn.innerHTML = btn.dataset.originalText;
+        }
+    }
 
     async function resolver(accion) {
         const label = accion === 'aprobar' ? 'aprobar' : 'rechazar';
@@ -308,7 +325,7 @@ $colorEstado = match ($movimiento['estado']) {
                 Toast.error(data.error || 'Error al procesar la solicitud');
                 setLoading(btn, false);
             }
-        } catch {
+        } catch (e) {
             Toast.error('Error de conexión. Intente nuevamente.');
             setLoading(btn, false);
         }
