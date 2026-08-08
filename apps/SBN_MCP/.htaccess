@@ -1,0 +1,58 @@
+# ============================================================
+# SEGURIDAD RAIZ - Sistema de Gestión de Bienes Nacionales (SBN_MCP)
+# ============================================================
+# Este .htaccess protege TODA la aplicación contra el acceso directo
+# a archivos sensibles del servidor (config, .env, SQL, respaldos, etc.).
+# Solo el directorio /public/ es accesible desde la web; todo lo demás
+# se bloquea aquí y a nivel del directorio padre.
+# ============================================================
+
+# Desactivar listado de directorios
+Options -Indexes
+
+# ---------- Denegar directorios internos completos ----------
+# Cualquier petición a estas carpetas se responde 403.
+# app      -> código fuente PHP
+# config   -> credenciales y configuración de la BD
+# sql      -> esquemas y volcados de la base de datos
+# scripts  -> utilidades de mantenimiento
+# logs     -> archivos de log con datos de sesión/IP
+# backups  -> respaldos completos de la base de datos
+# reports  -> reportes generados
+# cache    -> caché interna
+# uploads  -> archivos subidos (solo vía PHP autorizado)
+# scratch  -> archivos temporales
+# tests    -> pruebas
+# vendor   -> dependencias de terceros
+# no       -> basura/versiones antiguas
+# docs     -> documentación interna
+# scratch  -> temporales
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(app|config|sql|scripts|logs|backups|reports|cache|uploads|scratch|tests|vendor|no|docs)/ - [F,L]
+</IfModule>
+
+# ---------- Denegar archivos sensibles en cualquier subdirectorio ----------
+<FilesMatch "(^#.*#|\.(env|ini|conf|config|log|sql|bak|old|orig|save|swp|tmp|sh|bat|py)$|~$)">
+    Require all denied
+</FilesMatch>
+
+# ---------- Bloqueo específico de archivos críticos ----------
+<FilesMatch "^(\.env|\.env\.example|composer\.(json|lock)|phpstan\.neon|phpcs\.xml|composer\.phar|init_system\.php|install\.sh|setup_xampp\.bat)$">
+    Require all denied
+</FilesMatch>
+
+# ---------- Proteger .htaccess y .htpasswd ----------
+<FilesMatch "^\.ht">
+    Require all denied
+</FilesMatch>
+
+# ---------- Bloquear cualquier intento de path traversal en la URL ----------
+<IfModule mod_rewrite.c>
+    # THE_REQUEST = petición HTTP cruda (antes de que Apache resuelva ../)
+    # REQUEST_URI  = URL ya normalizada (no sirve para detectar ../)
+    RewriteCond %{THE_REQUEST} (\.\./|\.\.\\|%2e%2e|%252e|\.\.%2f|%2e%2e%2f) [NC,OR]
+    RewriteCond %{QUERY_STRING}  (\.\./|\.\.\\|%2e%2e|%252e) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>

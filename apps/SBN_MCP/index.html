@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maternidad Concepción Palacios | Excelencia Materno-Infantil</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- VARIABLES DE DISEÑO (Paleta de colores) --- */
+        :root {
+            --bg-principal: #fdfbf9;
+            --azul-profundo: #1e293b;
+            --rosa-maternidad: #36cab1;
+            --rosa-suave: #f4f1de;
+            --verde-sanitario: #3d5a80;
+            --blanco-puro: #ffffff;
+            --texto-oscuro: #334155;
+            --texto-mutado: #64748b;
+            --transicion: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* --- ESTILOS BASE --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-principal);
+            color: var(--texto-oscuro);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* --- BARRA DE NAVEGACIÓN (Efecto Cristal) --- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(253, 251, 249, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(30, 41, 59, 0.05);
+            transition: var(--transicion);
+        }
+
+        header.scrolled {
+            padding: 12px 8%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--azul-profundo);
+        }
+
+        .logo-icon {
+            width: 35px;
+            height: 35px;
+            background: var(--rosa-maternidad);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--texto-oscuro);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transicion);
+        }
+
+        nav a:hover {
+            color: var(--rosa-maternidad);
+        }
+
+        .btn-urgencias {
+            background-color: #38d9d9;
+            color: white !important;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(217, 56, 58, 0.2);
+        }
+
+        .btn-urgencias:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(217, 56, 58, 0.3);
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            min-height: 95vh;
+            display: flex;
+            align-items: center;
+            padding: 0 8%;
+            margin-top: 60px;
+            background: linear-gradient(120deg, rgba(244, 241, 222, 0.6) 0%, rgba(253, 251, 249, 0.9) 100%);
+            position: relative;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 60px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            line-height: 1.15;
+            color: var(--azul-profundo);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .hero-content p {
+            font-size: 1.15rem;
+            color: var(--texto-mutado);
+            margin-bottom: 35px;
+            max-width: 550px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn-primario {
+            padding: 15px 35px;
+            background-color: var(--azul-profundo);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: var(--transicion);
+        }
+
+        .btn-primario:hover {
+            background-color: var(--verde-sanitario);
+            transform: translateY(-3px);
+        }
+
+        .hero-image-wrapper {
+            position: relative;
+            height: 500px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.08);
+        }
+
+        .hero-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- MARQUESINA DE AVISOS INTERACTIVA --- */
+        .marquee-banner {
+            background-color: var(--rosa-maternidad);
+            color: white;
+            padding: 12px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 25s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        /* --- SECCIÓN DE ESTADÍSTICAS / HITOS (Contadores Animados) --- */
+        .stats-section {
+            padding: 80px 8%;
+            background-color: var(--blanco-puro);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 40px;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--rosa-maternidad);
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: var(--texto-mutado);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        /* --- SERVICIOS Y CAPACIDADES --- */
+        .services {
+            padding: 100px 8%;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            color: var(--azul-profundo);
+            margin-bottom: 15px;
+        }
+
+        .section-title p {
+            color: var(--texto-mutado);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        .service-card {
+            background: var(--blanco-puro);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: var(--transicion);
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+        }
+
+        .service-img {
+            height: 220px;
+            overflow: hidden;
+        }
+
+        .service-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transicion);
+        }
+
+        .service-card:hover .service-img img {
+            transform: scale(1.06);
+        }
+
+        .service-info {
+            padding: 30px;
+        }
+
+        .service-info h3 {
+            font-size: 1.3rem;
+            color: var(--azul-profundo);
+            margin-bottom: 12px;
+        }
+
+        .service-info p {
+            color: var(--texto-mutado);
+            font-size: 0.95rem;
+        }
+
+        /* --- HISTORIA CRONOLÓGICA --- */
+        .history {
+            background-color: var(--blanco-puro);
+            padding: 100px 8%;
+        }
+
+        .history-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .history-text blockquote {
+            font-size: 1.2rem;
+            font-style: italic;
+            border-left: 4px solid var(--rosa-maternidad);
+            padding-left: 20px;
+            margin: 25px 0;
+            color: var(--texto-oscuro);
+        }
+
+        .history-images {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .history-img-box {
+            border-radius: 12px;
+            overflow: hidden;
+            height: 250px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.04);
+        }
+
+        .history-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- CONTACTO Y MAPA --- */
+        .contact {
+            padding: 100px 8%;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 0.9fr 1.1fr;
+            gap: 50px;
+            background: var(--blanco-puro);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.02);
+        }
+
+        .contact-info h3 {
+            font-size: 1.8rem;
+            color: var(--azul-profundo);
+            margin-bottom: 25px;
+        }
+
+        .contact-item {
+            margin-bottom: 25px;
+        }
+
+        .contact-item label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--rosa-maternidad);
+            margin-bottom: 5px;
+        }
+
+        .contact-item p {
+            font-size: 1.05rem;
+            color: var(--texto-oscuro);
+        }
+
+        .map-wrapper {
+            border-radius: 16px;
+            overflow: hidden;
+            min-height: 350px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        .map-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        /* --- PIE DE PÁGINA --- */
+        footer {
+            background-color: var(--azul-profundo);
+            color: #94a3b8;
+            padding: 50px 8% 30px;
+            text-align: center;
+        }
+
+        .footer-content {
+            margin-bottom: 30px;
+        }
+
+        .footer-content p {
+            font-size: 1.1rem;
+            color: white;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 20px;
+            font-size: 0.85rem;
+        }
+
+        /* --- ANIMACIONES CON SCROLL (Clases de Activación) --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- RESPONSIVE DESIGN (Adaptabilidad total) --- */
+        @media (max-width: 1024px) {
+            .hero-grid, .history-layout, .contact-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            .hero-image-wrapper {
+                height: 350px;
+            }
+            .hero-content h1 {
+                font-size: 2.8rem;
+            }
+            nav {
+                display: none; /* En producción se integraría un menú hamburguesa */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!--Encabezado de la pagina-->
+    <header id="navbar">
+        <div class="logo-container">
+            <div class="logo-icon"></div>
+            <span>Maternidad Concepción Palacios</span>
+        </div>
+
+        <!--Menu de navecacuin navar-->
+        <nav>
+            <a href="#inicio">Inicio</a>
+            <a href="public/">Áreas MCP</a>
+            <a href="#servicios">Servicios</a>
+            <a href="#historia">Nuestra Historia</a>
+            <a href="#contacto">Ubicación</a>
+            <a href="tel:+584125384565" class="btn-urgencias">🚨 Emergencia 24Hrs.</a>
+            
+        </nav>
+    </header>
+
+    <section class="hero" id="inicio">
+        <div class="hero-grid">
+            <div class="hero-content reveal">
+                <h1>Atención Profesional y Compasiva en el Corazón de Caracas</h1>
+                <p>El centro hospitalario materno-infantil de referencia nacional más emblemático de Venezuela. Priorizando la vida y salud de las madres y neonatos con dedicación absoluta.</p>
+                <div class="hero-buttons">
+                    <a href="#servicios" class="btn-primario">Explorar Servicios</a>
+                </div>
+            </div>
+            <div class="hero-image-wrapper reveal" style="transition-delay: 0.2s;">
+                <img src="public\img\photo-bb.jpg" alt="Madre e hijo recién nacido">
+            </div>
+        </div>
+    </section>
+
+    <div class="marquee-banner">
+        <div class="marquee-content">
+            ⚠️ SERVICIO ASISTENCIAL PÚBLICO DISPONIBLE LAS 24 HORAS • SALAS DE PARTO Y QUIRÓFANOS EN OPERACIÓN CONSTANTE • EDIFICIO ANEXO NEGRA MATEA TOTALMENTE OPERATIVO • ⚠️ SERVICIO ASISTENCIAL PÚBLICO DISPONIBLE LAS 24 HORAS • 
+        </div>
+    </div>
+
+    <section class="stats-section" id="stats">
+        <div class="stat-card">
+            <div class="number" data-target="1938">0</div>
+            <p>Año de Fundación</p>
+        </div>
+        <div class="stat-card">
+            <div class="number" data-target="47757">0</div>
+            <p>Récord Mundial de Partos (1972)</p>
+        </div>
+        <div class="stat-card">
+            <div class="number" data-target="385">0</div>
+            <p>Capacidad de Camas</p>
+        </div>
+        <div class="stat-card">
+            <div class="number" data-target="24">0</div>
+            <p>Horas de Atención Continua</p>
+        </div>
+    </section>
+
+    <section class="services" id="servicios">
+        <div class="section-title reveal">
+            <h2>Nuestras Capacidades Médicas</h2>
+            <p>Infraestructura dedicada por completo al cuidado integral y especializado de la madre y el hijo.</p>
+        </div>
+        
+        <div class="services-grid">
+            <div class="service-card reveal">
+                <div class="service-img">
+                    <img src="public\img\control-prenatal.webp" alt="Control Prenatal">
+                </div>
+                <div class="service-info">
+                    <h3>Control Prenatal Avanzado</h3>
+                    <p>Monitoreo estricto del desarrollo fetal, evaluación de riesgos obstétricos y acompañamiento completo para un embarazo seguro.</p>
+                </div>
+            </div>
+            <div class="service-card reveal" style="transition-delay: 0.1s;">
+                <div class="service-img">
+                    <img src="public\img\Salas_de_parto.jpg" alt="Salas de parto">
+                </div>
+                <div class="service-info">
+                    <h3>Atención de Partos y Cirugía</h3>
+                    <p>Salas especializadas para la recepción de partos naturales y cirugías de alta complejidad obstétrica con personal de guardia permanente.</p>
+                </div>
+            </div>
+            <div class="service-card reveal" style="transition-delay: 0.2s;">
+                <div class="service-img">
+                    <img src="public\img\photo-Atecion.jpg" alt="Cuidados Intensivos Neonatales">
+                </div>
+                <div class="service-info">
+                    <h3>Cuidados Neonatales Especializados</h3>
+                    <p>Ubicados en el moderno Edificio Anexo "Negra Matea", atendiendo prematuros y neonatos de cuidado crítico con tecnología médica idónea.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="history" id="historia">
+        <div class="history-layout">
+            <div class="history-text reveal">
+                <h2>Reseña Histórica</h2>
+                <p>Su construcción se inició el 30 de noviembre de 1936 y fue formalmente inaugurada el <strong>17 de diciembre de 1938</strong> durante el mandato presidencial del General Eleazar López Contreras.</p>
+                <blockquote>
+                    "En el año 1972, la Maternidad Concepción Palacios consolidó un hito global al registrar el récord mundial del hospital con mayor volumen de alumbramientos en un año: 47.757 partos asistidos."
+                </blockquote>
+                <p>Hoy en día, sigue evolucionando y expandiendo su legado asistencial a través de nuevas ampliaciones tecnológicas y de infraestructura pública al servicio de toda Venezuela.</p>
+            </div>
+            <div class="history-images reveal">
+                <div class="history-img-box">
+                    <img src="public\img\Maternidad_Concepción_Palacios_-_Diagonal.jpg" alt="Estructura e historia clínica">
+                </div>
+                <div class="history-img-box" style="margin-top: 30px;">
+                    <img src="public\img\photo-medico.jpg" alt="Equipo médico">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact" id="contacto">
+        <div class="contact-grid reveal">
+            <div class="contact-info">
+                <h3>Contacto Directo</h3>
+                <div class="contact-item">
+                    <label>📍 Dirección Física</label>
+                    <p>Avenida Principal de San Martín, Parroquia San Juan, Municipio Libertador, Caracas 1020, Distrito Capital, Venezuela.</p>
+                </div>
+                <div class="contact-item">
+                    <label>📞 Teléfono de Central</label>
+                    <p><a href="tel:+584125384565" style="color: inherit; text-decoration: none;">+58 412-5384565</a></p>
+                </div>
+                <div class="contact-item">
+                    <label>⏰ Horarios de Emergencia</label>
+                    <p>Abierto las 24 horas del día, los 365 días del año.</p>
+                </div>
+            </div>
+            <div class="map-wrapper">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3923.364371510255!2d-66.93368882414163!3d10.4952!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8c2a5ed2b3394589%3A0xfa958744047a0bdf!2sMaternidad%20Concepci%C3%B3n%20Palacios!5e0!3m2!1ses!2sve!4v1710000000000!5m2!1ses!2sve" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <p>Maternidad Concepción Palacios</p>
+            <small>Sistema Público Nacional de Salud • Ministerio del Poder Popular para la Salud</small>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Maternidad Concepción Palacios. Rediseño Institucional Orientado al Ciudadano.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Cambiar estilos de Navbar al hacer scroll
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Efecto Reveal / Fade-in al hacer Scroll (Intersection Observer)
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    revealObserver.unobserve(entry.target); // Detener observación tras animar
+                }
+            });
+        }, { threshold: 0.15 });
+
+        revealElements.forEach(element => revealObserver.observe(element));
+
+        // Animación de Contadores Numéricos Dinámicos
+        const statsSection = document.getElementById('stats');
+        const counters = document.querySelectorAll('.number');
+        let started = false;
+
+        function startCounters() {
+            counters.forEach(counter => {
+                const target = +counter.getAttribute('data-target');
+                const speed = target / 80; // Control de velocidad
+                
+                const updateCount = () => {
+                    const current = +counter.innerText;
+                    if (current < target) {
+                        counter.innerText = Math.ceil(current + speed);
+                        setTimeout(updateCount, 20);
+                    } else {
+                        counter.innerText = target.toLocaleString('es-VE'); // Formato de número local
+                    }
+                };
+                updateCount();
+            });
+        }
+
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !started) {
+                    startCounters();
+                    started = true;
+                }
+            });
+        }, { threshold: 0.3 });
+
+        statsObserver.observe(statsSection);
+    </script>
+</body>
+</html>

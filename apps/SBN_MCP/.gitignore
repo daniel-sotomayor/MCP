@@ -1,0 +1,117 @@
+# =============================================================================
+# .gitignore — Sistema de Gestión de Bienes Nacionales MCP
+# =============================================================================
+# Esencial para evitar fuga de credenciales, datos de usuarios reales,
+# archivos generados y dependencias regenerables.
+# =============================================================================
+
+# ── Entorno y credenciales ──────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.backup
+
+# ── Dependencias (regenerables con composer install) ─────────────────────────
+/vendor/
+/composer.lock
+# NOTA: composer.lock debe commitearse en aplicaciones (no librerías) para
+# garantizar builds reproducibles. Lo incluimos para producción.
+
+# ── Archivos subidos por usuarios (NUNCA commitear — datos reales) ──────────
+/uploads/*
+!/uploads/.gitkeep
+!/uploads/bienes/.gitkeep
+!/uploads/responsables/.gitkeep
+/uploads/bienes/*
+!/uploads/bienes/.gitkeep
+/uploads/responsables/*
+!/uploads/responsables/.gitkeep
+
+# ── Backups (contienen datos reales completos) ──────────────────────────────
+/backups/*
+!/backups/.gitkeep
+# Excluir del log de git
+*.sql.gz
+*.dump
+
+# ── Logs (pueden contener info sensible: IPs, usuarios, queries) ───────────
+/logs/*
+!/logs/.gitkeep
+*.log
+
+# ── Cache ───────────────────────────────────────────────────────────────────
+/cache/*
+!/cache/.gitkeep
+*.cache
+
+# ── Reportes generados ──────────────────────────────────────────────────────
+/reports/*
+!/reports/.gitkeep
+
+# ── Archivos temporales / scratch ───────────────────────────────────────────
+/scratch/*
+!/scratch/.gitkeep
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# ── Sistema operativo ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ── IDEs y editores ─────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# ── PHP ─────────────────────────────────────────────────────────────────────
+# Composer
+composer.phar
+
+# PHPUnit / test artifacts
+.phpunit.result.cache
+.phpunit.cache/
+/tests/coverage/
+/tests/.phpunit/
+
+# PHP CS Fixer
+.php_cs
+.php_cs.cache
+
+# PHPStan
+.phpstan-cache/
+
+# ── Scripts de inicialización (solo se usan una vez) ────────────────────────
+# init_system.php está en la raíz pero NO debe commitearse
+# (ya se movió a scripts/install_system.php)
+/init_system.php
+/setup_xampp.bat
+/install.sh
+
+# ── Archivos de usuario/ofimática ───────────────────────────────────────────
+*.pkt  # Packet Tracer, no es del proyecto
+*.docx
+*.xlsx
+!docs/MANUAL_COMPLETO_SBN_MCP_UPTECMS.docx
+!docs/MANUAL_COMPLETO_SBN_MCP.docx
+
+# ── Misc ────────────────────────────────────────────────────────────────────
+*.pid
+*.seed
+*.pid.lock
+
+# ── Directorios "no" (parecen errores) ──────────────────────────────────────
+/no/
+
+# =============================================================================
+# REGLA CRÍTICA: Si algún día committeaste el .env por error, rótalo YA.
+# Cambia la contraseña de BD y todas las claves temporales de usuarios.
+# =============================================================================
