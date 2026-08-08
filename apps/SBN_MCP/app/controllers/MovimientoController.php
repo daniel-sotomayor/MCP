@@ -506,23 +506,30 @@ class MovimientoController extends Controller
                 ], JSON_UNESCAPED_UNICODE);
             }
 
-            // Separación de funciones: el acta se crea PENDIENTE.
-            // La aprobación la debe hacer un usuario distinto (approve/reject).
+            // Si el solicitante es administrador o gerencia_bn, el acta se aprueba automáticamente.
+            // Otros roles crean el acta como pendiente para aprobación por separación de funciones.
+            $rol = $_SESSION['rol'] ?? '';
+            $autoAprobar = in_array($rol, ['administrador', 'gerencia_bn'], true);
+            $estado = $autoAprobar ? 'aprobado' : 'pendiente';
+
             Database::query(
                 "INSERT INTO movimientos
                     (bien_id, tipo_movimiento, area_origen_id, area_destino_id,
                     usuario_solicita_id, usuario_aprueba_id, fecha_aprobacion,
                     motivo, contenido_acta, estado)
-                VALUES (:bien, :tipo, :origen, :destino, :solicita, NULL, NULL,
-                    :motivo, :contenido, 'pendiente')",
+                VALUES (:bien, :tipo, :origen, :destino, :solicita, :aprueba, :fecha_aprob,
+                    :motivo, :contenido, :estado)",
                 [
-                    'bien'      => $bienId,
-                    'tipo'      => $tipo,
-                    'origen'    => $origen,
-                    'destino'   => $destino,
-                    'solicita'  => Session::get('user_id'),
-                    'motivo'    => $motivo,
-                    'contenido' => $contenido,
+                    'bien'       => $bienId,
+                    'tipo'       => $tipo,
+                    'origen'     => $origen,
+                    'destino'    => $destino,
+                    'solicita'   => Session::get('user_id'),
+                    'aprueba'    => $autoAprobar ? Session::get('user_id') : null,
+                    'fecha_aprob' => $autoAprobar ? date('Y-m-d H:i:s') : null,
+                    'motivo'     => $motivo,
+                    'contenido'  => $contenido,
+                    'estado'     => $estado,
                 ]
             );
             $movId = Database::lastInsertId();
@@ -536,22 +543,43 @@ class MovimientoController extends Controller
                 } catch (\Exception $ignore) {}
             }
 
-            // Los efectos sobre el bien (traslado de área, desincorporación)
-            // se aplican SOLO al aprobar el acta (ver approve()).
+            // Si se auto-aprobó, aplicar efectos del movimiento sobre el bien inmediatamente
+            if ($autoAprobar) {
+                $movData = Database::fetch(
+                    "SELECT * FROM movimientos WHERE id_movimiento = :id",
+                    ['id' => $movId]
+                );
+                if ($movData) {
+                    $this->aplicarEfectosMovimiento($movData);
+                }
+            }
 
             Database::commit();
             $this->logAudit('INSERT', 'movimientos', $movId);
-            Logger::security('acta_creada_pendiente', [
-                'movimiento_id' => $movId,
-                'user_id'       => Session::get('user_id'),
-                'tipo'          => $tipo,
-            ]);
 
-            $this->json([
-                'success'  => true,
-                'message'  => 'Acta registrada correctamente. Quedó en estado pendiente hasta que otro usuario autorizado la apruebe.',
-                'redirect' => '/movimientos/' . $movId,
-            ]);
+            if ($autoAprobar) {
+                Logger::security('acta_autoaprobada', [
+                    'movimiento_id' => $movId,
+                    'user_id'       => Session::get('user_id'),
+                    'tipo'          => $tipo,
+                ]);
+                $this->json([
+                    'success'  => true,
+                    'message'  => 'Acta creada y aprobada automáticamente.',
+                    'redirect' => '/movimientos/' . $movId,
+                ]);
+            } else {
+                Logger::security('acta_creada_pendiente', [
+                    'movimiento_id' => $movId,
+                    'user_id'       => Session::get('user_id'),
+                    'tipo'          => $tipo,
+                ]);
+                $this->json([
+                    'success'  => true,
+                    'message'  => 'Acta registrada correctamente. Quedó en estado pendiente hasta que otro usuario autorizado la apruebe.',
+                    'redirect' => '/movimientos/' . $movId,
+                ]);
+            }
         } catch (\Exception $e) {
             Database::rollBack();
             error_log("Error al registrar acta: " . $e->getMessage());
