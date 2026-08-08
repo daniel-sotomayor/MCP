@@ -233,6 +233,26 @@ class BienController extends Controller
             $this->logAudit('INSERT', 'bienes', $bienId);
             $this->registrarMovimiento($bienId, 'incorporacion', null, (int)$this->getInput('id_area'));
 
+            // Notificar a gerencia y administrador que hay un nuevo bien para asignar Nro. de Bien
+            $bienNombre = trim($this->getInput('nombre'));
+            $bienCodigo = $codigoInterno;
+            $registrador = Session::get('nombre_completo') ?? Session::get('username', 'Un usuario');
+
+            \App\Controllers\NotificationController::notifyRole(
+                'gerencia_bn',
+                'warning',
+                'Nuevo Bien Registrado — Asignar Nro. de Bien',
+                "{$registrador} registró el bien \"{$bienNombre}\" (Código: {$bienCodigo}). Debe asignarle un Número de Bien.",
+                "/bienes/{$bienId}"
+            );
+            \App\Controllers\NotificationController::notifyRole(
+                'administrador',
+                'warning',
+                'Nuevo Bien Registrado — Asignar Nro. de Bien',
+                "{$registrador} registró el bien \"{$bienNombre}\" (Código: {$bienCodigo}). Debe asignarle un Número de Bien.",
+                "/bienes/{$bienId}"
+            );
+
             Database::commit();
 
             $this->json([

@@ -304,5 +304,92 @@
         });
     });
     </script>
+
+    <?php if(isset($is_app)): ?>
+    <!-- =====================================================================
+         SISTEMA DE NOTIFICACIONES EN TIEMPO REAL (SSE)
+         =====================================================================
+         Se conecta al endpoint /notificaciones/stream usando Server-Sent Events.
+         Muestra Toasts para cada notificación nueva y actualiza el contador
+         del icono de campana en la sidebar.
+         ===================================================================== -->
+    <script>
+    'use strict';
+    (function() {
+        const BASE = <?= json_encode($base_url ?? '') ?>;
+        const bellBadge = document.getElementById('notifBadge');
+        let evtSource = null;
+        let reconnectTimer = null;
+        let notifCount = parseInt(bellBadge?.textContent || '0', 10);
+
+        function updateBadge(count) {
+            notifCount = count;
+            if (bellBadge) {
+                bellBadge.textContent = count;
+                bellBadge.style.display = count > 0 ? 'flex' : 'none';
+            }
+        }
+
+        function connectSSE() {
+            if (evtSource) { evtSource.close(); }
+            evtSource = new EventSource(BASE + '/notificaciones/stream');
+
+            evtSource.addEventListener('notification', function(e) {
+                try {
+                    const data = JSON.parse(e.data);
+                    // Mostrar toast
+                    if (window.Toast) {
+                        const fn = Toast[data.type] || Toast.info;
+                        fn(data.title + ': ' + data.message);
+                    }
+                    // Actualizar badge
+                    notifCount++;
+                    updateBadge(notifCount);
+                    // Reproducir sonido sutil
+                    try { new Audio(BASE + '/img/notif.mp3').play().catch(()=>{}); } catch(_){}
+                } catch(_){}
+            });
+
+            evtSource.addEventListener('connected', function() {
+                console.log('[Notificaciones] Conectado al stream SSE');
+            });
+
+            evtSource.addEventListener('heartbeat', function() {});
+
+            evtSource.onerror = function() {
+                evtSource.close();
+                // Reconectar después de 5 segundos
+                reconnectTimer = setTimeout(connectSSE, 5000);
+            };
+        }
+
+        // Cargar conteo inicial
+        fetch(BASE + '/notificaciones/count')
+            .then(r => r.json())
+            .then(d => updateBadge(d.count || 0))
+            .catch(() => {});
+
+        // Conectar SSE
+        connectSSE();
+
+        // Marcar todas como leídas al hacer clic en la campana
+        const bellBtn = document.getElementById('notifBell');
+        if (bellBtn) {
+            bellBtn.addEventListener('click', function() {
+                if (notifCount > 0) {
+                    fetch(BASE + '/notificaciones/read-all', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-Token': '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
+                        },
+                        body: 'csrf_token=<?= urlencode($_SESSION['csrf_token'] ?? '') ?>'
+                    }).then(() => updateBadge(0)).catch(() => {});
+                }
+            });
+        }
+    })();
+    </script>
+    <?php endif; ?>
 </body>
 </html>

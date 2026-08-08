@@ -76,7 +76,45 @@ class ConfiguracionController extends Controller
             );
         }
 
+        // Reiniciar el mailer para que tome la nueva configuración
+        \App\Helpers\EmailHelper::resetMailer();
+
         $this->logAudit('UPDATE', 'configuracion', 0);
         $this->json(['success' => true, 'message' => 'Configuración guardada correctamente']);
+    }
+
+    /**
+     * Prueba la conexión SMTP (AJAX)
+     */
+    public function testSmtp(): void
+    {
+        if (!$this->verifyCSRF()) {
+            $this->json(['error' => 'Token CSRF inválido'], 403);
+            return;
+        }
+
+        $email = trim($this->getInput('email'));
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->json(['error' => 'Correo electrónico inválido'], 400);
+            return;
+        }
+
+        // Reiniciar mailer para usar config actualizada
+        \App\Helpers\EmailHelper::resetMailer();
+
+        $sent = \App\Helpers\EmailHelper::sendNotification(
+            $email,
+            'Prueba de configuración SMTP - SBN MCP',
+            '<h2 style="color:#0f172a">Configuración SMTP Exitosa</h2>
+             <p>El correo de prueba fue enviado correctamente desde el Sistema de Gestión de Bienes Nacionales.</p>
+             <p style="color:#64748b;font-size:12px">Fecha: ' . date('d/m/Y H:i:s') . '</p>',
+            "Prueba de configuración SMTP exitosa.\nFecha: " . date('d/m/Y H:i:s')
+        );
+
+        if ($sent) {
+            $this->json(['success' => true, 'message' => 'Correo de prueba enviado a ' . $email]);
+        } else {
+            $this->json(['error' => 'Error al enviar. Verifique los datos de configuración SMTP.'], 500);
+        }
     }
 }

@@ -171,6 +171,10 @@ foreach ($params as $p) { $paramsMap[$p['clave']] = $p; }
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:.3rem"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     Guardar Configuración
                 </button>
+                <button type="button" id="btn-test-smtp" class="btn btn-secondary" style="background:#4a5568;color:#fff;border:none">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:.3rem"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9z"/></svg>
+                    Probar SMTP
+                </button>
             </div>
         </form>
     </div>
@@ -194,6 +198,34 @@ document.getElementById('form-config').addEventListener('submit', async function
         al.textContent = data.message || (data.error || 'Error');
         al.style.cssText = 'display:block;padding:.75rem 1rem;border-radius:6px;font-size:.9rem;background:' + (data.success ? '#f0fff4;border:1px solid #9ae6b4;color:#276749' : '#fff5f5;border:1px solid #fed7d7;color:#c53030');
         if (data.success && window.Toast) Toast.success(data.message);
+    } catch(err) {
+        al.textContent = 'Error de conexión';
+        al.style.cssText = 'display:block;padding:.75rem 1rem;border-radius:6px;font-size:.9rem;background:#fff5f5;border:1px solid #fed7d7;color:#c53030';
+    }
+    btn.disabled = false; btn.innerHTML = origText;
+});
+
+/* Probar SMTP */
+document.getElementById('btn-test-smtp').addEventListener('click', async function() {
+    const email = prompt('Ingrese el correo donde desea recibir el prueba de SMTP:');
+    if (!email) return;
+
+    const btn = this;
+    const origText = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = 'Enviando...';
+    const al = document.getElementById('form-alert');
+
+    try {
+        const csrfToken = document.querySelector('[name="csrf_token"]').value;
+        const res = await fetch('<?= $base_url ?>/configuracion/test-smtp', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: `csrf_token=${encodeURIComponent(csrfToken)}&email=${encodeURIComponent(email)}`
+        });
+        const data = await res.json();
+        al.textContent = data.message || data.error || 'Error';
+        al.style.cssText = 'display:block;padding:.75rem 1rem;border-radius:6px;font-size:.9rem;background:' +
+            (data.success ? '#f0fff4;border:1px solid #9ae6b4;color:#276749' : '#fff5f5;border:1px solid #fed7d7;color:#c53030');
     } catch(err) {
         al.textContent = 'Error de conexión';
         al.style.cssText = 'display:block;padding:.75rem 1rem;border-radius:6px;font-size:.9rem;background:#fff5f5;border:1px solid #fed7d7;color:#c53030';
