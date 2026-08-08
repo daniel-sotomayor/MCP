@@ -91,10 +91,11 @@ require APP_PATH . '/views/partials/sidebar.php';
                                     Editar
                                 </a>
                                 <?php if (($u['rol'] ?? '') !== 'validador_inventario'): ?>
-                                <form method="post" action="<?= $base_url ?>/usuarios/<?= (int)$u['id_usuario'] ?>/asignar-validador" style="display:inline">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                                    <button class="btn btn-sm btn-info" type="submit">Asignar Validador</button>
-                                </form>
+                                <button class="btn btn-sm btn-info"
+                                        onclick="asignarValidador(<?= (int)$u['id_usuario'] ?>, '<?= htmlspecialchars($u['username'] ?? '') ?>')"
+                                        aria-label="Asignar validador a <?= htmlspecialchars($u['username'] ?? '') ?>">
+                                    Asignar Validador
+                                </button>
                                 <?php else: ?>
                                 <span class="badge badge-sm" style="background:#38a169">Validador</span>
                                 <?php endif; ?>
@@ -137,6 +138,31 @@ async function desactivarUsuario(id, username) {
             setTimeout(() => location.reload(), 1000);
         } else {
             Toast.error(data.error || 'Error al desactivar el usuario');
+        }
+    } catch {
+        Toast.error('Error de conexión. Intente nuevamente.');
+    }
+}
+
+async function asignarValidador(id, username) {
+    if (!confirm(`¿Asignar rol de Validador de Inventario a "${username}"? El usuario podrá realizar verificaciones semestrales.`)) return;
+
+    const csrfToken = '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>';
+    const BASE      = '<?= $base_url ?>';
+
+    try {
+        const res  = await fetch(`${BASE}/usuarios/${id}/asignar-validador`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `csrf_token=${encodeURIComponent(csrfToken)}`
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            Toast.success(data.message || 'Validador asignado correctamente');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            Toast.error(data.error || 'Error al asignar validador');
         }
     } catch {
         Toast.error('Error de conexión. Intente nuevamente.');

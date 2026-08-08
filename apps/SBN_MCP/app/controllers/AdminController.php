@@ -49,7 +49,10 @@ class AdminController extends Controller
         );
 
         $this->title = 'Gestión de Usuarios';
-        $this->renderWithLayout('admin/usuarios', ['usuarios' => $usuarios]);
+        $this->renderWithLayout('admin/usuarios', [
+            'usuarios' => $usuarios,
+            'csrf_token' => $this->generateCSRFToken(),
+        ]);
     }
 
     /**
