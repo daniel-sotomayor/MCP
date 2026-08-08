@@ -1,0 +1,41 @@
+# ============================================================
+# GITIGNORE - Hospital MCP / SBN_MCP
+# NUNCA subir archivos de entorno, credenciales ni datos reales.
+# ============================================================
+
+# --- Variables de entorno y credenciales (NUNCA subir) ---
+.env
+.env.*
+!.env.example
+apps/SBN_MCP/.env
+apps/SBN_MCP/.env.*
+!apps/SBN_MCP/.env.example
+
+# --- Dependencias ---
+vendor/
+node_modules/
+apps/SBN_MCP/vendor/
+apps/SBN_MCP/composer.phar
+
+# --- Datos generados / sensibles ---
+apps/SBN_MCP/backups/
+apps/SBN_MCP/logs/
+apps/SBN_MCP/cache/
+apps/SBN_MCP/uploads/
+apps/SBN_MCP/reports/
+apps/SBN_MCP/scratch/
+apps/SBN_MCP/no/
+apps/SBN_MCP/sql/*.sql.bak
+apps/SBN_MCP/docs/generated/
+
+# --- Entornos virtuales y herramientas ---
+.venv/
+venv/
+
+# --- Archivos del sistema operativo ---
+Thumbs.db
+Desktop.ini
+*.log
+
+# --- Artefactos basura ---
+nul

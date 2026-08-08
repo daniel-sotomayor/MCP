@@ -1,0 +1,44 @@
+# ============================================================
+# SEGURIDAD RAÍZ - Hospital MCP
+# ============================================================
+# Protección en profundidad: bloquea el acceso web directo a los
+# directorios internos de las aplicaciones y a archivos sensibles,
+# sin interferir con el sitio estático (HTML/CSS/JS/img).
+# ============================================================
+
+Options -Indexes
+
+# ---------- Página de error 403 personalizada ----------
+ErrorDocument 403 /MCP/403.html
+
+# ---------- Denegar acceso a internos de apps/SBN_MCP ----------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^apps/SBN_MCP/(app|config|sql|scripts|logs|backups|reports|cache|uploads|scratch|tests|vendor|no|docs|scratch)/ - [F,L]
+    RewriteRule ^apps/SBN_MCP/\.env$ - [F,L]
+    RewriteRule ^apps/SBN_MCP/\.env\.example$ - [F,L]
+    RewriteRule ^apps/SBN_MCP/composer\.(json|lock|phar)$ - [F,L]
+    RewriteRule ^apps/SBN_MCP/(init_system\.php|install\.sh|setup_xampp\.bat)$ - [F,L]
+</IfModule>
+
+# ---------- Bloquear archivos sensibles en todo el árbol web ----------
+<FilesMatch "(^#.*#|\.(env|ini|log|sql|bak|conf|sh|bat|py|tmp)$|~$)">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^\.ht">
+    Require all denied
+</FilesMatch>
+
+# ---------- Bloquear path traversal ----------
+<IfModule mod_rewrite.c>
+    # THE_REQUEST = petición HTTP cruda (antes de que Apache resuelva ../)
+    # REQUEST_URI  = URL ya normalizada (no sirve para detectar ../)
+    RewriteCond %{THE_REQUEST} (\.\./|\.\.\\|%2e%2e|%252e|\.\.%2f|%2e%2e%2f) [NC,OR]
+    RewriteCond %{QUERY_STRING}  (\.\./|\.\.\\|%2e%2e|%252e) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
