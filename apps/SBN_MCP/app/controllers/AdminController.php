@@ -241,14 +241,20 @@ class AdminController extends Controller
             return;
         }
 
+        $user = Database::fetch('SELECT id_usuario, id_rol FROM usuarios WHERE id_usuario = :id', ['id' => $id]);
+        if (!$user) { $this->json(['error' => 'Usuario no encontrado'], 404); return; }
+
+        $currentRole = Database::fetch('SELECT nombre FROM roles WHERE id_rol = :id', ['id' => $user['id_rol']]);
+        if (in_array($currentRole['nombre'] ?? '', ['administrador', 'gerencia_bn'])) {
+            $this->json(['error' => 'No se puede cambiar el rol de un administrador o gerente'], 403);
+            return;
+        }
+
         $role = Database::fetch('SELECT id_rol FROM roles WHERE nombre = :n LIMIT 1', ['n' => 'validador_inventario']);
         if (!$role) {
             $this->json(['error' => 'Rol validador_inventario no existe'], 400);
             return;
         }
-
-        $user = Database::fetch('SELECT id_usuario FROM usuarios WHERE id_usuario = :id', ['id' => $id]);
-        if (!$user) { $this->json(['error' => 'Usuario no encontrado'], 404); return; }
 
         Database::query('UPDATE usuarios SET id_rol = :r WHERE id_usuario = :id', ['r' => $role['id_rol'], 'id' => $id]);
         $this->logAudit('UPDATE', 'usuarios', $id);

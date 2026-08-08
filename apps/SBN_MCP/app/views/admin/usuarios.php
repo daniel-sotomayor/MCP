@@ -90,13 +90,13 @@ require APP_PATH . '/views/partials/sidebar.php';
                                    aria-label="Editar usuario <?= htmlspecialchars($u['username'] ?? '') ?>">
                                     Editar
                                 </a>
-                                <?php if (($u['rol'] ?? '') !== 'validador_inventario'): ?>
+                                <?php if (!in_array($u['rol'] ?? '', ['administrador','gerencia_bn','validador_inventario'])): ?>
                                 <button class="btn btn-sm btn-info"
                                         onclick="asignarValidador(<?= (int)$u['id_usuario'] ?>, '<?= htmlspecialchars($u['username'] ?? '') ?>')"
                                         aria-label="Asignar validador a <?= htmlspecialchars($u['username'] ?? '') ?>">
                                     Asignar Validador
                                 </button>
-                                <?php else: ?>
+                                <?php elseif (($u['rol'] ?? '') === 'validador_inventario'): ?>
                                 <span class="badge badge-sm" style="background:#38a169">Validador</span>
                                 <?php endif; ?>
                                 <?php if ((int)$u['id_usuario'] !== (int)($_SESSION['user_id'] ?? 0)): ?>
