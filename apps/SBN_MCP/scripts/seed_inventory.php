@@ -266,6 +266,7 @@ echo "  " . count($bienes) . " bienes insertados\n";
 // ── MOVIMIENTOS ──
 echo "Insertando movimientos...\n";
 $movimientos = [
+    // Movimientos aprobados (ya procesados)
     [1,3,'incorporacion',null,12,4,1,'2024-01-15','2024-01-15','Incorporacion PC Gerencia BN','aprobado',
      '<p>Acta Incorporación <strong>BN-2024-000003</strong> (PC) → Gerencia BN. Estado: Nuevo.</p>'],
     [2,11,'traslado',6,7,4,1,'2024-03-01','2024-03-01','Traslado camilla Sala Parto → Quirófano','aprobado',
@@ -286,18 +287,28 @@ $movimientos = [
      '<p>Acta Incorporación <strong>BN-2024-000049</strong> (Mamógrafo) → Materno-Fetal.</p>'],
     [10,67,'incorporacion',null,6,4,1,'2024-03-15','2024-03-15','Mesa de parto Sala Parto','aprobado',
      '<p>Acta Incorporación <strong>BN-2024-000067</strong> (Mesa Parto) → Sala Parto Box 3.</p>'],
+    // Movimientos pendientes (para probar aprobación/rechazo)
+    [11,8,'incorporacion',null,8,4,null,'2026-08-01',null,'Equipo de ultrasonido para Banco de Sangre','pendiente',
+     '<p>Acta Incorporación <strong>BN-2026-000008</strong> (Ultrasonido) → Banco de Sangre. Equipo nuevo.</p>'],
+    [12,20,'traslado',20,21,4,null,'2026-08-03',null,'Traslado silla de ruedas a Odontología','pendiente',
+     '<p>Acta Traslado <strong>BN-2026-000020</strong> (Silla Ruedas). Milicianos → Odontología.</p>'],
+    [13,25,'desincorporacion',25,null,3,null,'2026-08-05',null,'Monitor con falla electrónica','pendiente',
+     '<p>Acta Desincorporación <strong>BN-2026-000025</strong> (Monitor). Falla placa electrónica.</p>'],
 ];
 foreach ($movimientos as $m) {
-    insert($conn, 'movimientos', [
+    $data = [
         'bien_id'=>$m[1],'tipo_movimiento'=>$m[2],
         'area_origen_id'=>$m[3],'area_destino_id'=>$m[4],
         'usuario_solicita_id'=>$m[5],'usuario_aprueba_id'=>$m[6],
         'fecha_solicitud'=>$m[7].' 09:00:00',
-        'fecha_aprobacion'=>$m[8].' 10:00:00',
         'motivo'=>$m[9],'estado'=>$m[10],
         'contenido_acta'=>$m[11],
         'created_at'=>date('Y-m-d H:i:s'),'updated_at'=>date('Y-m-d H:i:s'),
-    ]);
+    ];
+    if ($m[8] !== null) {
+        $data['fecha_aprobacion'] = $m[8].' 10:00:00';
+    }
+    insert($conn, 'movimientos', $data);
 }
 echo "  10 movimientos creados\n";
 
