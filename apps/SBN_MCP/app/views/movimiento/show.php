@@ -277,9 +277,17 @@ $colorEstado = match ($movimiento['estado']) {
     transform: none !important;
 }
 #acta_document_content,
-#acta_document_content * {
+#acta_document_content *,
+#previewModalBody,
+#previewModalBody * {
     color: #1e293b !important;
     opacity: 1 !important;
+}
+#previewModalBody {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    font-size: 0.95rem;
+    line-height: 1.6;
 }
 </style>
 

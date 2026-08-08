@@ -591,7 +591,7 @@ class MovimientoController extends Controller
         $hora    = date('H:i', strtotime($mov['fecha_solicitud']));
         $nroActa = date('Ymd', strtotime($mov['fecha_solicitud'])) . "-" . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
 
-        $responsableDatos = $mov['responsable_datos'] ? json_decode($mov['responsable_datos'], true) : [];
+        $responsableDatos = !empty($mov['responsable_datos']) ? json_decode($mov['responsable_datos'], true) : [];
 
         // Preparar imagen del encabezado como JPG con fondo blanco (para Word)
         $headerImgTag = '';
@@ -656,7 +656,7 @@ class MovimientoController extends Controller
         $hora    = date('H:i', strtotime($mov['fecha_solicitud']));
         $nroActa = date('Ymd', strtotime($mov['fecha_solicitud'])) . "-" . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
 
-        $responsableDatos = $mov['responsable_datos'] ? json_decode($mov['responsable_datos'], true) : [];
+        $responsableDatos = !empty($mov['responsable_datos']) ? json_decode($mov['responsable_datos'], true) : [];
 
         $html = $this->generarHtmlPdf($mov['tipo_movimiento'], $bien, $origen, $destino, $usuario, $fecha, $hora, $nroActa, $mov['motivo'], $responsableDatos);
 
