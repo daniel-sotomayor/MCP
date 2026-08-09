@@ -1071,21 +1071,27 @@ class BienController extends Controller
             $validation->setFormula1('"' . implode(',', $estadoList) . '"');
         }
 
-        // N = Área (columna 14)
-        $areaList = [];
+        // ── Hoja de Áreas de referencia (el usuario escribe el ID en columna N) ──
+        $areaSheet = $spreadsheet->createSheet(1);
+        $areaSheet->setTitle('Areas');
+        $areaSheet->setCellValue('A1', 'ID');
+        $areaSheet->setCellValue('B1', 'Área / Ubicación');
+        $areaSheet->getStyle('A1')->getFont()->setBold(true);
+        $areaSheet->getStyle('B1')->getFont()->setBold(true);
+        $areaSheet->getStyle('A1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+        $areaSheet->getStyle('A1')->getFill()->getStartColor()->setRGB('1E3A5F');
+        $areaSheet->getStyle('A1')->getFont()->getColor()->setRGB('FFFFFF');
+        $areaSheet->getStyle('B1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+        $areaSheet->getStyle('B1')->getFill()->getStartColor()->setRGB('1E3A5F');
+        $areaSheet->getStyle('B1')->getFont()->getColor()->setRGB('FFFFFF');
+        $ar = 2;
         foreach ($areas as $a) {
-            $areaList[] = $a['id_area'] . ' - ' . $a['nombre'];
+            $areaSheet->setCellValue('A' . $ar, $a['id_area']);
+            $areaSheet->setCellValue('B' . $ar, $a['nombre']);
+            $ar++;
         }
-        for ($r = 3; $r <= 1003; $r++) {
-            $validation = $sheet->getCell('N' . $r)->getDataValidation();
-            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
-            $validation->setAllowBlank(true);
-            $validation->setShowDropDown(true);
-            $validation->setShowInputMessage(true);
-            $validation->setPromptTitle('Área');
-            $validation->setPrompt('Seleccione el área/ubicación del bien');
-            $validation->setFormula1('"' . implode(',', $areaList) . '"');
-        }
+        $areaSheet->getColumnDimension('A')->setAutoSize(true);
+        $areaSheet->getColumnDimension('B')->setAutoSize(true);
 
         // Auto-ajustar columnas
         for ($i = 1; $i <= count($headers); $i++) {
