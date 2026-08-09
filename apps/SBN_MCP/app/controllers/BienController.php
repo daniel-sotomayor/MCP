@@ -979,11 +979,14 @@ class BienController extends Controller
     {
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Plantilla Importación');
+        $sheet->setTitle('Plantilla');
 
-        $tipos = Database::fetchAll("SELECT codigo, nombre FROM tipos_bien WHERE activo = TRUE ORDER BY codigo");
+        $tipos   = Database::fetchAll("SELECT codigo, nombre FROM tipos_bien WHERE activo = TRUE ORDER BY codigo");
         $estados = Database::fetchAll("SELECT id_estado, nombre FROM estados ORDER BY id_estado");
-        $areas = Database::fetchAll("SELECT id_area, CONCAT(edificio,' / ',piso,' / ',nombre_area) AS nombre FROM areas WHERE activa = TRUE ORDER BY edificio, piso, nombre_area");
+        $areas   = Database::fetchAll(
+            "SELECT id_area, CONCAT(edificio,' / ',piso,' / ',nombre_area) AS nombre
+             FROM areas WHERE activa = TRUE ORDER BY edificio, piso, nombre_area"
+        );
 
         $headers = [
             'Cód. Ministerio*', 'Nro. Bien Min.', 'Nombre*', 'Descripción',
@@ -995,68 +998,105 @@ class BienController extends Controller
             'Responsable Cédula', 'Observaciones'
         ];
 
+        // Headers con estilo
         $col = 1;
         foreach ($headers as $header) {
             $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . '1';
             $sheet->setCellValue($cell, $header);
-            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getFont()->setBold(true)->setSize(11);
             $sheet->getStyle($cell)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
             $sheet->getStyle($cell)->getFill()->getStartColor()->setRGB('1E3A5F');
             $sheet->getStyle($cell)->getFont()->getColor()->setRGB('FFFFFF');
+            $sheet->getStyle($cell)->getAlignment()->setWrapText(true);
             $col++;
         }
 
-        $row = 2;
+        // Fila de instrucciones (fila 2, en gris claro)
+        $instructions = [
+            'Ej: MINSAL-2024-001', 'Ej: 001234', 'Ej: Computador de Escritorio',
+            'Descripción detallada', 'Ej: ABC123456', 'Ej: Dell', 'Ej: OptiPlex 7090',
+            'Ej: Negro', 'Ej: 2024', 'Ej: 1', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+        ];
+        for ($c = 0; $c < count($instructions); $c++) {
+            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c + 1) . '2';
+            $sheet->setCellValue($cell, $instructions[$c]);
+            $sheet->getStyle($cell)->getFont()->setItalic(true)->setColor()->setRGB('94A3B8');
+            $sheet->getStyle($cell)->getFont()->setSize(9);
+        }
+
+        // ── LISTAS DESPLEGABLES (data validation) ──
+
+        // K = Condición Inicial (columna 11)
+        $condicionList = '"Nuevo,Bueno,Regular,Malo"';
+        for ($r = 3; $r <= 1003; $r++) {
+            $validation = $sheet->getCell('K' . $r)->getDataValidation();
+            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+            $validation->setAllowBlank(true);
+            $validation->setShowDropDown(true);
+            $validation->setShowInputMessage(true);
+            $validation->setPromptTitle('Condición');
+            $validation->setPrompt('Seleccione la condición del bien');
+            $validation->setFormula1($condicionList);
+        }
+
+        // L = Clasificación (columna 12)
+        $tipoList = [];
         foreach ($tipos as $t) {
-            $sheet->setCellValue('L' . $row, $t['codigo'] . ' - ' . $t['nombre']);
-            $row++;
+            $tipoList[] = $t['codigo'] . ' - ' . $t['nombre'];
         }
-        $row = 2;
+        for ($r = 3; $r <= 1003; $r++) {
+            $validation = $sheet->getCell('L' . $r)->getDataValidation();
+            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+            $validation->setAllowBlank(true);
+            $validation->setShowDropDown(true);
+            $validation->setShowInputMessage(true);
+            $validation->setPromptTitle('Clasificación');
+            $validation->setPrompt('Seleccione el código de clasificación (Pub.9)');
+            $validation->setFormula1('"' . implode(',', $tipoList) . '"');
+        }
+
+        // M = Estado (columna 13)
+        $estadoList = [];
         foreach ($estados as $e) {
-            $sheet->setCellValue('M' . $row, $e['id_estado'] . ' - ' . $e['nombre']);
-            $row++;
+            $estadoList[] = $e['id_estado'] . ' - ' . $e['nombre'];
         }
-        $row = 2;
+        for ($r = 3; $r <= 1003; $r++) {
+            $validation = $sheet->getCell('M' . $r)->getDataValidation();
+            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+            $validation->setAllowBlank(true);
+            $validation->setShowDropDown(true);
+            $validation->setShowInputMessage(true);
+            $validation->setPromptTitle('Estado');
+            $validation->setPrompt('Seleccione el estado del bien');
+            $validation->setFormula1('"' . implode(',', $estadoList) . '"');
+        }
+
+        // N = Área (columna 14)
+        $areaList = [];
         foreach ($areas as $a) {
-            $sheet->setCellValue('N' . $row, $a['id_area'] . ' - ' . $a['nombre']);
-            $row++;
+            $areaList[] = $a['id_area'] . ' - ' . $a['nombre'];
+        }
+        for ($r = 3; $r <= 1003; $r++) {
+            $validation = $sheet->getCell('N' . $r)->getDataValidation();
+            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+            $validation->setAllowBlank(true);
+            $validation->setShowDropDown(true);
+            $validation->setShowInputMessage(true);
+            $validation->setPromptTitle('Área');
+            $validation->setPrompt('Seleccione el área/ubicación del bien');
+            $validation->setFormula1('"' . implode(',', $areaList) . '"');
         }
 
-        $refSheet = $spreadsheet->createSheet(1);
-        $refSheet->setTitle('Referencias');
-        $refSheet->setCellValue('A1', 'Códigos de Clasificación (columna L)');
-        $refSheet->getStyle('A1')->getFont()->setBold(true);
-        $r = 2;
-        foreach ($tipos as $t) {
-            $refSheet->setCellValue('A' . $r, $t['codigo']);
-            $refSheet->setCellValue('B' . $r, $t['nombre']);
-            $r++;
-        }
-        $r++;
-        $refSheet->setCellValue('A' . $r, 'Estados (columna M)');
-        $refSheet->getStyle('A' . $r)->getFont()->setBold(true);
-        $r++;
-        foreach ($estados as $e) {
-            $refSheet->setCellValue('A' . $r, $e['id_estado']);
-            $refSheet->setCellValue('B' . $r, $e['nombre']);
-            $r++;
-        }
-        $r++;
-        $refSheet->setCellValue('A' . $r, 'Áreas (columna N)');
-        $refSheet->getStyle('A' . $r)->getFont()->setBold(true);
-        $r++;
-        foreach ($areas as $a) {
-            $refSheet->setCellValue('A' . $r, $a['id_area']);
-            $refSheet->setCellValue('B' . $r, $a['nombre']);
-            $r++;
-        }
-
-        $refSheet->getColumnDimension('A')->setAutoSize(true);
-        $refSheet->getColumnDimension('B')->setAutoSize(true);
-
+        // Auto-ajustar columnas
         for ($i = 1; $i <= count($headers); $i++) {
             $sheet->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i))->setAutoSize(true);
         }
+
+        // Fijar paneles: fila 1 congelada
+        $sheet->freezePane('A3');
+
+        // Ocultar fila de instrucciones al imprimir
+        $sheet->getRowDimension(2)->setVisible(false);
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="plantilla_importacion_bienes.xlsx"');
