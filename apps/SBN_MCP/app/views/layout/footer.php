@@ -196,9 +196,21 @@
         });
         reiniciarTemporizador();
 
-        // ── Logout al cerrar pestaña (beforeunload + beacon) ──
+        // ── Logout al cerrar pestaña (solo al cerrar, NO al navegar) ──
+        var navigating = false;
+        document.addEventListener('click', function(e) {
+            var link = e.target.closest('a[href]');
+            if (link && link.hostname === window.location.hostname) {
+                navigating = true;
+            }
+        });
+        document.addEventListener('submit', function() {
+            navigating = true;
+        });
         window.addEventListener('beforeunload', function() {
-            navigator.sendBeacon(BASE + '/logout-beacon');
+            if (!navigating) {
+                navigator.sendBeacon(BASE + '/logout-beacon');
+            }
         });
         <?php endif; ?>
     })();
