@@ -1020,7 +1020,7 @@ class BienController extends Controller
         for ($c = 0; $c < count($instructions); $c++) {
             $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c + 1) . '2';
             $sheet->setCellValue($cell, $instructions[$c]);
-            $sheet->getStyle($cell)->getFont()->setItalic(true)->setColor()->setRGB('94A3B8');
+            $sheet->getStyle($cell)->getFont()->setItalic(true)->getColor()->setRGB('94A3B8');
             $sheet->getStyle($cell)->getFont()->setSize(9);
         }
 
