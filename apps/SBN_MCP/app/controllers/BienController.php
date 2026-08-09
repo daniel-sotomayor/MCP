@@ -235,6 +235,22 @@ class BienController extends Controller
 
             Database::commit();
 
+            // Notificar a gerencia y administrador
+            $bienNombre = trim($this->getInput('nombre'));
+            $registrador = Session::get('nombre_completo') ?? Session::get('username', 'Un usuario');
+            \App\Controllers\NotificationController::notifyRole(
+                'gerencia_bn', 'warning',
+                'Nuevo Bien — Asignar Nro. de Bien',
+                "{$registrador} registró \"{$bienNombre}\" (Código: {$codigoInterno}). Asigne Número de Bien.",
+                "/bienes/{$bienId}"
+            );
+            \App\Controllers\NotificationController::notifyRole(
+                'administrador', 'warning',
+                'Nuevo Bien — Asignar Nro. de Bien',
+                "{$registrador} registró \"{$bienNombre}\" (Código: {$codigoInterno}). Asigne Número de Bien.",
+                "/bienes/{$bienId}"
+            );
+
             $this->json([
                 'success'  => true,
                 'message'  => 'Bien registrado correctamente',

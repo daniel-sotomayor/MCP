@@ -304,5 +304,75 @@
         });
     });
     </script>
+
+    <?php if(isset($is_app)): ?>
+    <script>
+    'use strict';
+    (function() {
+        var BASE = <?= json_encode($base_url ?? '') ?>;
+        var bellBadge = document.getElementById('notifBadge');
+        var evtSource = null;
+        var reconnectTimer = null;
+        var notifCount = parseInt(bellBadge ? bellBadge.textContent : '0', 10) || 0;
+
+        function updateBadge(count) {
+            notifCount = count;
+            if (bellBadge) {
+                bellBadge.textContent = count;
+                bellBadge.style.display = count > 0 ? 'flex' : 'none';
+            }
+        }
+
+        function connectSSE() {
+            if (evtSource) { evtSource.close(); }
+            evtSource = new EventSource(BASE + '/notificaciones/stream');
+
+            evtSource.addEventListener('notification', function(e) {
+                try {
+                    var data = JSON.parse(e.data);
+                    if (window.Toast) {
+                        var fn = Toast[data.type] || Toast.info;
+                        fn(data.title + ': ' + data.message);
+                    }
+                    notifCount++;
+                    updateBadge(notifCount);
+                } catch(_){}
+            });
+
+            evtSource.addEventListener('connected', function() {});
+
+            evtSource.addEventListener('heartbeat', function() {});
+
+            evtSource.onerror = function() {
+                evtSource.close();
+                reconnectTimer = setTimeout(connectSSE, 10000);
+            };
+        }
+
+        fetch(BASE + '/notificaciones/count')
+            .then(function(r) { return r.json(); })
+            .then(function(d) { updateBadge(d.count || 0); })
+            .catch(function(){});
+
+        connectSSE();
+
+        var bellBtn = document.getElementById('notifBell');
+        if (bellBtn) {
+            bellBtn.addEventListener('click', function() {
+                if (notifCount > 0) {
+                    fetch(BASE + '/notificaciones/read-all', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-Token': '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
+                        },
+                        body: 'csrf_token=<?= urlencode($_SESSION['csrf_token'] ?? '') ?>'
+                    }).then(function() { updateBadge(0); }).catch(function(){});
+                }
+            });
+        }
+    })();
+    </script>
+    <?php endif; ?>
 </body>
 </html>

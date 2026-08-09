@@ -241,7 +241,9 @@ class NotificationController extends Controller
     public static function notifyRole(string $role, string $type, string $title, string $message, ?string $link = null): void
     {
         $users = Database::fetchAll(
-            "SELECT id_usuario FROM usuarios WHERE rol = :rol AND activo = TRUE",
+            "SELECT u.id_usuario FROM usuarios u
+             JOIN roles r ON u.id_rol = r.id_rol
+             WHERE r.nombre = :rol AND u.activo = TRUE",
             ['rol' => $role]
         );
 
