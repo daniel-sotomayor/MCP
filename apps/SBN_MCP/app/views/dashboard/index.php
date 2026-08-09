@@ -451,9 +451,15 @@ $totalBienes = max((int)$metrics['total'], 1);
 </main>
 
 <!-- ── Scripts ──────────────────────────────────────────────── -->
-<script src="<?= $base_url ?>/js/chart.umd.min.js"></script>
+<script src="<?= $base_url ?>/js/chart.umd.min.js" defer></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Esperar a que Chart.js esté disponible (cargado con defer)
+    function initCharts() {
+        if (typeof Chart === 'undefined') {
+            setTimeout(initCharts, 100);
+            return;
+        }
 
     /* ── Colores de estados (mismos que los badges) ── */
     const estadoLabels = <?= json_encode(array_column($bienesPorEstado, 'nombre')) ?>;
@@ -636,6 +642,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    initCharts();
 });
 </script>
 

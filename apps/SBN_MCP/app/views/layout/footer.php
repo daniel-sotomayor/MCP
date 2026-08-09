@@ -318,9 +318,16 @@
     (function() {
         const BASE = <?= json_encode($base_url ?? '') ?>;
         const bellBadge = document.getElementById('notifBadge');
+        const MAX_DURATION = 30 * 60 * 1000; // 30 minutos máximo
+        const INITIAL_BACKOFF = 5000;
+        const MAX_BACKOFF = 60000;
+
         let evtSource = null;
         let reconnectTimer = null;
         let notifCount = parseInt(bellBadge?.textContent || '0', 10);
+        let currentBackoff = INITIAL_BACKOFF;
+        let connectTime = 0;
+        let notifAudio = null; // Cache de Audio object
 
         function updateBadge(count) {
             notifCount = count;
@@ -330,27 +337,47 @@
             }
         }
 
+        function getNotifAudio() {
+            if (!notifAudio) {
+                notifAudio = new Audio(BASE + '/img/notif.mp3');
+                notifAudio.volume = 0.3;
+            }
+            notifAudio.currentTime = 0;
+            notifAudio.play().catch(function(){});
+        }
+
+        function disconnect() {
+            if (evtSource) { evtSource.close(); evtSource = null; }
+            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        }
+
         function connectSSE() {
-            if (evtSource) { evtSource.close(); }
+            disconnect();
+
+            // Si excedió el tiempo máximo, forzar recarga de página
+            if (Date.now() - connectTime > MAX_DURATION) {
+                window.location.reload();
+                return;
+            }
+
+            connectTime = connectTime || Date.now();
             evtSource = new EventSource(BASE + '/notificaciones/stream');
 
             evtSource.addEventListener('notification', function(e) {
                 try {
                     const data = JSON.parse(e.data);
-                    // Mostrar toast
                     if (window.Toast) {
-                        const fn = Toast[data.type] || Toast.info;
+                        var fn = Toast[data.type] || Toast.info;
                         fn(data.title + ': ' + data.message);
                     }
-                    // Actualizar badge
                     notifCount++;
                     updateBadge(notifCount);
-                    // Reproducir sonido sutil
-                    try { new Audio(BASE + '/img/notif.mp3').play().catch(()=>{}); } catch(_){}
+                    try { getNotifAudio(); } catch(_){}
                 } catch(_){}
             });
 
             evtSource.addEventListener('connected', function() {
+                currentBackoff = INITIAL_BACKOFF; // Reset backoff en éxito
                 console.log('[Notificaciones] Conectado al stream SSE');
             });
 
@@ -358,22 +385,36 @@
 
             evtSource.onerror = function() {
                 evtSource.close();
-                // Reconectar después de 5 segundos
-                reconnectTimer = setTimeout(connectSSE, 5000);
+                // Backoff exponencial: 5s → 10s → 20s → 40s → 60s max
+                reconnectTimer = setTimeout(function() {
+                    currentBackoff = Math.min(currentBackoff * 2, MAX_BACKOFF);
+                    connectSSE();
+                }, currentBackoff);
             };
         }
 
+        // Pausar SSE cuando la pestaña está oculta (ahorra recursos)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                disconnect();
+            } else {
+                connectTime = Date.now(); // Reiniciar timer al volver
+                currentBackoff = INITIAL_BACKOFF;
+                connectSSE();
+            }
+        });
+
         // Cargar conteo inicial
         fetch(BASE + '/notificaciones/count')
-            .then(r => r.json())
-            .then(d => updateBadge(d.count || 0))
-            .catch(() => {});
+            .then(function(r) { return r.json(); })
+            .then(function(d) { updateBadge(d.count || 0); })
+            .catch(function(){});
 
         // Conectar SSE
         connectSSE();
 
         // Marcar todas como leídas al hacer clic en la campana
-        const bellBtn = document.getElementById('notifBell');
+        var bellBtn = document.getElementById('notifBell');
         if (bellBtn) {
             bellBtn.addEventListener('click', function() {
                 if (notifCount > 0) {
@@ -384,7 +425,7 @@
                             'X-CSRF-Token': '<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>'
                         },
                         body: 'csrf_token=<?= urlencode($_SESSION['csrf_token'] ?? '') ?>'
-                    }).then(() => updateBadge(0)).catch(() => {});
+                    }).then(function() { updateBadge(0); }).catch(function(){});
                 }
             });
         }

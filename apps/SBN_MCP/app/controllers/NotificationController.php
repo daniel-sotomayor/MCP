@@ -42,6 +42,8 @@ class NotificationController extends Controller
 
         $lastCheck = time();
         $lastId = 0;
+        $startTime = time();
+        $maxDuration = 1800; // 30 minutos máximo
 
         // Enviar evento de conexión establecida
         echo "event: connected\n";
@@ -50,6 +52,14 @@ class NotificationController extends Controller
 
         // Loop de eventos (cada 5 segundos)
         while (true) {
+            // Forzar desconexión después de 30 minutos (el cliente reconecta automáticamente)
+            if (time() - $startTime > $maxDuration) {
+                echo "event: reconnect\n";
+                echo "data: " . json_encode(['reason' => 'max_duration']) . "\n\n";
+                flush();
+                break;
+            }
+
             // Verificar si hay nuevas notificaciones
             $notifications = $this->getPendingNotifications($userId, $lastId);
             
