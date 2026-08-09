@@ -991,14 +991,14 @@ class BienController extends Controller
         $headers = [
             'Cód. Ministerio*', 'Nro. Bien Min.', 'Nombre*', 'Descripción',
             'Serial', 'Marca', 'Modelo', 'Color', 'Año Fabricación',
-            'Cantidad', 'Condición Inicial', 'Cód. Clasificación*', 'Estado*',
+            'Cantidad', 'Condición Inicial (1)', 'Cód. Clasificación*', 'Estado*',
             'Área (ID)*', 'CIN Edificio', 'CIN Piso', 'CIN Departamento',
             'CIN Oficina', 'CIN Posición', 'Nro. Factura', 'Fecha Adquisición',
             'Valor Inicial (Bs.)', 'Vida Útil (años)', 'Responsable Nombre',
             'Responsable Cédula', 'Observaciones'
         ];
 
-        // Headers con estilo
+        // Fila 1: Headers
         $col = 1;
         foreach ($headers as $header) {
             $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . '1';
@@ -1011,87 +1011,79 @@ class BienController extends Controller
             $col++;
         }
 
-        // Fila de instrucciones (fila 2, en gris claro)
-        $instructions = [
-            'Ej: MINSAL-2024-001', 'Ej: 001234', 'Ej: Computador de Escritorio',
-            'Descripción detallada', 'Ej: ABC123456', 'Ej: Dell', 'Ej: OptiPlex 7090',
-            'Ej: Negro', 'Ej: 2024', 'Ej: 1', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+        // Fila 2: Ejemplo
+        $ejemplo = [
+            'MINSAL-2024-001', '001234', 'Computador de Escritorio',
+            'Computador Dell OptiPlex 7090, 16GB RAM, 512GB SSD',
+            'ABC123456', 'Dell', 'OptiPlex 7090', 'Negro', '2024',
+            '1', 'Nuevo', '01 - Equipos de Oficina', '1 - Operativo',
+            '5', 'Edificio Central', '3', 'Sub Dirección',
+            'Oficina 301', 'Posición A',
+            'FAC-2024-00123', '2024-03-15', '2500.00', '10',
+            'Juan Pérez', 'V-12345678', 'Equipo asignado a sub dirección'
         ];
-        for ($c = 0; $c < count($instructions); $c++) {
-            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c + 1) . '2';
-            $sheet->setCellValue($cell, $instructions[$c]);
-            $sheet->getStyle($cell)->getFont()->setItalic(true)->getColor()->setRGB('94A3B8');
-            $sheet->getStyle($cell)->getFont()->setSize(9);
+        $col = 1;
+        foreach ($ejemplo as $val) {
+            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . '2';
+            $sheet->setCellValue($cell, $val);
+            $sheet->getStyle($cell)->getFont()->setItalic(true)->getColor()->setRGB('64748B');
+            $sheet->getStyle($cell)->getFont()->setSize(10);
+            $col++;
         }
 
-        // ── LISTAS DESPLEGABLES (data validation) ──
-
-        // K = Condición Inicial (columna 11)
-        $condicionList = '"Nuevo,Bueno,Regular,Malo"';
-        for ($r = 3; $r <= 1003; $r++) {
-            $validation = $sheet->getCell('K' . $r)->getDataValidation();
-            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
-            $validation->setAllowBlank(true);
-            $validation->setShowDropDown(true);
-            $validation->setShowInputMessage(true);
-            $validation->setPromptTitle('Condición');
-            $validation->setPrompt('Seleccione la condición del bien');
-            $validation->setFormula1($condicionList);
+        // Auto-ajustar columnas
+        for ($i = 1; $i <= count($headers); $i++) {
+            $sheet->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i))->setAutoSize(true);
         }
+        $sheet->freezePane('A2');
 
-        // L = Clasificación (columna 12)
-        $tipoList = [];
+        // ── Hoja de Referencia: Clasificaciones ──
+        $tSheet = $spreadsheet->createSheet(1);
+        $tSheet->setTitle('Clasificaciones');
+        $tSheet->setCellValue('A1', 'Código');
+        $tSheet->setCellValue('B1', 'Nombre');
+        $tSheet->getStyle('A1')->getFont()->setBold(true);
+        $tSheet->getStyle('B1')->getFont()->setBold(true);
+        $tr = 2;
         foreach ($tipos as $t) {
-            $tipoList[] = $t['codigo'] . ' - ' . $t['nombre'];
+            $tSheet->setCellValue('A' . $tr, $t['codigo']);
+            $tSheet->setCellValue('B' . $tr, $t['nombre']);
+            $tr++;
         }
-        for ($r = 3; $r <= 1003; $r++) {
-            $validation = $sheet->getCell('L' . $r)->getDataValidation();
-            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
-            $validation->setAllowBlank(true);
-            $validation->setShowDropDown(true);
-            $validation->setShowInputMessage(true);
-            $validation->setPromptTitle('Clasificación');
-            $validation->setPrompt('Seleccione el código de clasificación (Pub.9)');
-            $validation->setFormula1('"' . implode(',', $tipoList) . '"');
-        }
+        $tSheet->getColumnDimension('A')->setAutoSize(true);
+        $tSheet->getColumnDimension('B')->setAutoSize(true);
 
-        // M = Estado (columna 13)
-        $estadoList = [];
+        // ── Hoja de Referencia: Estados ──
+        $eSheet = $spreadsheet->createSheet(2);
+        $eSheet->setTitle('Estados');
+        $eSheet->setCellValue('A1', 'ID');
+        $eSheet->setCellValue('B1', 'Nombre');
+        $eSheet->getStyle('A1')->getFont()->setBold(true);
+        $eSheet->getStyle('B1')->getFont()->setBold(true);
+        $er = 2;
         foreach ($estados as $e) {
-            $estadoList[] = $e['id_estado'] . ' - ' . $e['nombre'];
+            $eSheet->setCellValue('A' . $er, $e['id_estado']);
+            $eSheet->setCellValue('B' . $er, $e['nombre']);
+            $er++;
         }
-        for ($r = 3; $r <= 1003; $r++) {
-            $validation = $sheet->getCell('M' . $r)->getDataValidation();
-            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
-            $validation->setAllowBlank(true);
-            $validation->setShowDropDown(true);
-            $validation->setShowInputMessage(true);
-            $validation->setPromptTitle('Estado');
-            $validation->setPrompt('Seleccione el estado del bien');
-            $validation->setFormula1('"' . implode(',', $estadoList) . '"');
-        }
+        $eSheet->getColumnDimension('A')->setAutoSize(true);
+        $eSheet->getColumnDimension('B')->setAutoSize(true);
 
-        // ── Hoja de Áreas de referencia (el usuario escribe el ID en columna N) ──
-        $areaSheet = $spreadsheet->createSheet(1);
-        $areaSheet->setTitle('Areas');
-        $areaSheet->setCellValue('A1', 'ID');
-        $areaSheet->setCellValue('B1', 'Área / Ubicación');
-        $areaSheet->getStyle('A1')->getFont()->setBold(true);
-        $areaSheet->getStyle('B1')->getFont()->setBold(true);
-        $areaSheet->getStyle('A1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
-        $areaSheet->getStyle('A1')->getFill()->getStartColor()->setRGB('1E3A5F');
-        $areaSheet->getStyle('A1')->getFont()->getColor()->setRGB('FFFFFF');
-        $areaSheet->getStyle('B1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
-        $areaSheet->getStyle('B1')->getFill()->getStartColor()->setRGB('1E3A5F');
-        $areaSheet->getStyle('B1')->getFont()->getColor()->setRGB('FFFFFF');
+        // ── Hoja de Referencia: Áreas ──
+        $aSheet = $spreadsheet->createSheet(3);
+        $aSheet->setTitle('Areas');
+        $aSheet->setCellValue('A1', 'ID');
+        $aSheet->setCellValue('B1', 'Área / Ubicación');
+        $aSheet->getStyle('A1')->getFont()->setBold(true);
+        $aSheet->getStyle('B1')->getFont()->setBold(true);
         $ar = 2;
         foreach ($areas as $a) {
-            $areaSheet->setCellValue('A' . $ar, $a['id_area']);
-            $areaSheet->setCellValue('B' . $ar, $a['nombre']);
+            $aSheet->setCellValue('A' . $ar, $a['id_area']);
+            $aSheet->setCellValue('B' . $ar, $a['nombre']);
             $ar++;
         }
-        $areaSheet->getColumnDimension('A')->setAutoSize(true);
-        $areaSheet->getColumnDimension('B')->setAutoSize(true);
+        $aSheet->getColumnDimension('A')->setAutoSize(true);
+        $aSheet->getColumnDimension('B')->setAutoSize(true);
 
         // Auto-ajustar columnas
         for ($i = 1; $i <= count($headers); $i++) {
