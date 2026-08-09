@@ -56,6 +56,7 @@ class App
         $this->router->get('/login',         ['App\Controllers\AuthController', 'showLogin']);
         $this->router->post('/login',        ['App\Controllers\AuthController', 'login']);
         $this->router->post('/logout',       ['App\Controllers\AuthController', 'logout']);
+        $this->router->post('/logout-beacon',['App\Controllers\AuthController', 'logoutBeacon'], ['auth']);
         $this->router->get('/cambiar-clave', ['App\Controllers\AuthController', 'showCambiarClave'], ['auth']);
         $this->router->post('/cambiar-clave',['App\Controllers\AuthController', 'cambiarClave'],     ['auth']);
 

@@ -158,6 +158,22 @@ class AuthController extends Controller
         $this->redirect('/login');
     }
 
+    /**
+     * Logout silencioso via beacon (beforeunload).
+     * No requiere CSRF porque solo se llama desde el mismo origen al cerrar pestaña.
+     */
+    public function logoutBeacon(): void
+    {
+        $userId = (int) Session::get('user_id');
+        if ($userId > 0) {
+            $this->logAuditAuth('logout_tab_closed', $userId);
+        }
+        Session::destroy();
+        http_response_code(204);
+        header('Content-Length: 0');
+        exit;
+    }
+
     // ─── Privados ────────────────────────────────────────────────────────────
 
     private function findUser(string $identifier): ?array

@@ -195,6 +195,11 @@
             document.addEventListener(evt, reiniciarTemporizador, { passive: true });
         });
         reiniciarTemporizador();
+
+        // ── Logout al cerrar pestaña (beforeunload + beacon) ──
+        window.addEventListener('beforeunload', function() {
+            navigator.sendBeacon(BASE + '/logout-beacon');
+        });
         <?php endif; ?>
     })();
 
