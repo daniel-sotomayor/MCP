@@ -11,48 +11,10 @@ namespace App\Helpers;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
-use App\Core\Database;
 
 class EmailHelper
 {
     private static ?PHPMailer $mailer = null;
-    private static ?array $config = null;
-
-    /**
-     * Carga configuración SMTP desde la tabla `configuracion`
-     */
-    private static function loadConfig(): array
-    {
-        if (self::$config !== null) {
-            return self::$config;
-        }
-
-        try {
-            $rows = Database::fetchAll(
-                "SELECT clave, valor FROM configuracion WHERE clave IN 
-                 ('mail_host','mail_port','mail_username','mail_password',
-                  'mail_encryption','mail_from_email','mail_from_name')"
-            );
-            self::$config = [];
-            foreach ($rows as $row) {
-                self::$config[$row['clave']] = $row['valor'];
-            }
-        } catch (\Throwable $e) {
-            error_log("Error cargando configuración de correo: " . $e->getMessage());
-            self::$config = [];
-        }
-
-        return self::$config;
-    }
-
-    /**
-     * Obtiene valor de configuración con fallback a $_ENV
-     */
-    private static function getConfig(string $key, string $envKey, string $default = ''): string
-    {
-        $config = self::loadConfig();
-        return $config[$key] ?? $_ENV[$envKey] ?? $default;
-    }
 
     /**
      * Obtiene instancia configurada de PHPMailer
@@ -62,19 +24,14 @@ class EmailHelper
         if (self::$mailer === null) {
             self::$mailer = new PHPMailer(true);
 
-            // Configuración SMTP desde base de datos (con fallback a .env)
+            // Configuración SMTP desde .env
             self::$mailer->isSMTP();
-            self::$mailer->Host = self::getConfig('mail_host', 'MAIL_HOST', 'smtp.gmail.com');
+            self::$mailer->Host = $_ENV['MAIL_HOST'] ?? 'smtp.gmail.com';
             self::$mailer->SMTPAuth = true;
-            self::$mailer->Username = self::getConfig('mail_username', 'MAIL_USERNAME', '');
-            self::$mailer->Password = self::getConfig('mail_password', 'MAIL_PASSWORD', '');
-
-            $encryption = self::getConfig('mail_encryption', 'MAIL_ENCRYPTION', 'tls');
-            self::$mailer->SMTPSecure = strtolower($encryption) === 'ssl'
-                ? PHPMailer::ENCRYPTION_SMTPS
-                : PHPMailer::ENCRYPTION_STARTTLS;
-
-            self::$mailer->Port = (int) self::getConfig('mail_port', 'MAIL_PORT', '587');
+            self::$mailer->Username = $_ENV['MAIL_USERNAME'] ?? '';
+            self::$mailer->Password = $_ENV['MAIL_PASSWORD'] ?? '';
+            self::$mailer->SMTPSecure = $_ENV['MAIL_ENCRYPTION'] ?? PHPMailer::ENCRYPTION_STARTTLS;
+            self::$mailer->Port = (int)($_ENV['MAIL_PORT'] ?? 587);
 
             // Desactivar debug en producción
             self::$mailer->SMTPDebug = ($_ENV['APP_DEBUG'] ?? false) ? SMTP::DEBUG_SERVER : SMTP::DEBUG_OFF;
@@ -84,21 +41,12 @@ class EmailHelper
 
             // From
             self::$mailer->setFrom(
-                self::getConfig('mail_from_email', 'MAIL_FROM', 'noreply@mcp.gob.ve'),
-                self::getConfig('mail_from_name', 'MAIL_FROM_NAME', 'Sistema Bienes Nacionales MCP')
+                $_ENV['MAIL_FROM'] ?? 'noreply@mcp.gob.ve',
+                $_ENV['MAIL_FROM_NAME'] ?? 'Sistema Bienes Nacionales MCP'
             );
         }
 
         return self::$mailer;
-    }
-
-    /**
-     * Reinicia la instancia del mailer (útil tras cambiar configuración)
-     */
-    public static function resetMailer(): void
-    {
-        self::$mailer = null;
-        self::$config = null;
     }
 
     /**

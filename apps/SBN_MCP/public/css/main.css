@@ -3,7 +3,7 @@
     |SBN · Maternidad Concepción Palacios
     |═══════════════════════════════════════════════════════════ */
 
-/* Google Fonts cargado via <link preload> en header.php */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ── Variables globales (light) ─────────────────────────── */
 :root {

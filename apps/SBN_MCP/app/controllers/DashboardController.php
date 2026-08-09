@@ -31,7 +31,6 @@ use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Logger;
 use App\Core\Session;
-use App\Core\Cache;
 
 class DashboardController extends Controller
 {
@@ -41,21 +40,17 @@ class DashboardController extends Controller
         
         try {
             $this->title = 'Dashboard - Sistema de Bienes Nacionales';
-
-            // Caché de 5 minutos para datos pesados del dashboard
-            $cacheTTL = 300;
-            $metrics = $this->getMetrics();
-
+            
             $data = [
-                'metrics'           => $metrics,
-                'recentBienes'      => Cache::remember('dash_recent_bienes', fn() => $this->getRecentBienes(), $cacheTTL),
-                'recentMovimientos' => Cache::remember('dash_recent_movimientos', fn() => $this->getRecentMovimientos(), $cacheTTL),
-                'bienesPorEstado'   => $this->getBienesPorEstado($metrics['total']),
-                'bienesPorEdificio' => $this->getBienesPorEdificio($metrics['total']),
-                'alertas'           => Cache::remember('dash_alertas', fn() => $this->getAlertas(), $cacheTTL),
-                'bienesPorArea'     => Cache::remember('dash_bienes_area', fn() => $this->getBienesPorArea(), $cacheTTL),
-                'areaResumen'       => Cache::remember('dash_area_resumen', fn() => $this->getAreaResumen(), $cacheTTL),
-                'topAreasInoperativos' => Cache::remember('dash_top_areas', fn() => $this->getTopAreasInoperativos(), $cacheTTL),
+                'metrics'           => $this->getMetrics(),
+                'recentBienes'      => $this->getRecentBienes(),
+                'recentMovimientos' => $this->getRecentMovimientos(),
+                'bienesPorEstado'   => $this->getBienesPorEstado(),
+                'bienesPorEdificio' => $this->getBienesPorEdificio(),
+                'alertas'           => $this->getAlertas(),
+                'bienesPorArea'     => $this->getBienesPorArea(),
+                'areaResumen'       => $this->getAreaResumen(),
+                'topAreasInoperativos' => $this->getTopAreasInoperativos(),
             ];
             
             $this->renderWithLayout('dashboard/index', $data);
@@ -184,21 +179,16 @@ class DashboardController extends Controller
     /**
      * Obtener distribución de bienes por estado
      */
-    private function getBienesPorEstado(int $totalBienes = 0): array
+    private function getBienesPorEstado(): array
     {
         try {
-            // Evitar subquery COUNT(*) usando el total ya conocido
-            if ($totalBienes <= 0) {
-                $totalBienes = (int)(Database::fetchValue("SELECT COUNT(*) FROM bienes") ?? 1);
-            }
             return Database::fetchAll(
                 "SELECT e.nombre, e.color, COUNT(b.id_bien) AS cantidad,
-                        ROUND((COUNT(b.id_bien) * 100.0 / :total), 1) AS porcentaje
+                        ROUND((COUNT(b.id_bien) * 100.0 / (SELECT COUNT(*) FROM bienes)), 1) AS porcentaje
                  FROM estados e
                  LEFT JOIN bienes b ON e.id_estado = b.id_estado
                  GROUP BY e.id_estado, e.nombre, e.color
-                 ORDER BY e.id_estado",
-                ['total' => $totalBienes]
+                 ORDER BY e.id_estado"
             );
         } catch (\Exception $e) {
             Logger::error('Error getting bienes por estado', ['error' => $e->getMessage()]);
@@ -209,22 +199,18 @@ class DashboardController extends Controller
     /**
      * Obtener distribución de bienes por edificio
      */
-    private function getBienesPorEdificio(int $totalBienes = 0): array
+    private function getBienesPorEdificio(): array
     {
         try {
-            if ($totalBienes <= 0) {
-                $totalBienes = (int)(Database::fetchValue("SELECT COUNT(*) FROM bienes") ?? 1);
-            }
             return Database::fetchAll(
                 "SELECT a.edificio, COUNT(b.id_bien) AS cantidad,
-                        ROUND((COUNT(b.id_bien) * 100.0 / :total), 1) AS porcentaje
+                        ROUND((COUNT(b.id_bien) * 100.0 / (SELECT COUNT(*) FROM bienes)), 1) AS porcentaje
                  FROM areas a
                  LEFT JOIN bienes b ON a.id_area = b.id_area
                  WHERE a.activa = TRUE
                  GROUP BY a.edificio
                  HAVING cantidad > 0
-                 ORDER BY cantidad DESC",
-                ['total' => $totalBienes]
+                 ORDER BY cantidad DESC"
             );
         } catch (\Exception $e) {
             Logger::error('Error getting bienes por edificio', ['error' => $e->getMessage()]);

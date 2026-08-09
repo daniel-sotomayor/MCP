@@ -184,8 +184,6 @@ class App
             ['auth', 'role:administrador']);
         $this->router->post('/configuracion', ['App\Controllers\ConfiguracionController', 'index'],
             ['auth', 'role:administrador']);
-        $this->router->post('/configuracion/test-smtp', ['App\Controllers\ConfiguracionController', 'testSmtp'],
-            ['auth', 'role:administrador']);
 
         // ── Auditoría ─────────────────────────────────────────────────────────
         $this->router->get('/auditoria', ['App\Controllers\AuditoriaController', 'index'],
