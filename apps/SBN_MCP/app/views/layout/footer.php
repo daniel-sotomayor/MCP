@@ -196,21 +196,17 @@
         });
         reiniciarTemporizador();
 
-        // ── Logout al cerrar pestaña (solo al cerrar, NO al navegar) ──
-        var navigating = false;
-        document.addEventListener('click', function(e) {
-            var link = e.target.closest('a[href]');
-            if (link && link.hostname === window.location.hostname) {
-                navigating = true;
-            }
-        });
-        document.addEventListener('submit', function() {
-            navigating = true;
-        });
+        // ── Logout al cerrar pestaña/navegador ──
+        // Cualquier click = el usuario interactúa → NO enviar beacon.
+        // Sin click (Ctrl+W, X del nav, cerrar app) → SÍ enviar beacon.
+        var _clicked = false;
+        document.addEventListener('click', function() { _clicked = true; }, true);
+        document.addEventListener('submit', function() { _clicked = true; }, true);
         window.addEventListener('beforeunload', function() {
-            if (!navigating) {
+            if (!_clicked) {
                 navigator.sendBeacon(BASE + '/logout-beacon');
             }
+            _clicked = false;
         });
         <?php endif; ?>
     })();
