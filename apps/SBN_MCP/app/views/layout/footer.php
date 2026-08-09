@@ -306,27 +306,14 @@
     </script>
 
     <?php if(isset($is_app)): ?>
-    <!-- =====================================================================
-         SISTEMA DE NOTIFICACIONES EN TIEMPO REAL (SSE)
-         =====================================================================
-         Se conecta al endpoint /notificaciones/stream usando Server-Sent Events.
-         Muestra Toasts para cada notificación nueva y actualiza el contador
-         del icono de campana en la sidebar.
-         ===================================================================== -->
     <script>
     'use strict';
     (function() {
-        const BASE = <?= json_encode($base_url ?? '') ?>;
-        const bellBadge = document.getElementById('notifBadge');
-        const MAX_DURATION = 30 * 60 * 1000; // 30 minutos máximo
-        const INITIAL_BACKOFF = 5000;
-        const MAX_BACKOFF = 60000;
-
-        let evtSource = null;
-        let reconnectTimer = null;
-        let notifCount = parseInt(bellBadge?.textContent || '0', 10);
-        let currentBackoff = INITIAL_BACKOFF;
-        let connectTime = Date.now();
+        var BASE = <?= json_encode($base_url ?? '') ?>;
+        var bellBadge = document.getElementById('notifBadge');
+        var evtSource = null;
+        var reconnectTimer = null;
+        var notifCount = parseInt(bellBadge ? bellBadge.textContent : '0', 10) || 0;
 
         function updateBadge(count) {
             notifCount = count;
@@ -336,21 +323,8 @@
             }
         }
 
-        function disconnect() {
-            if (evtSource) { evtSource.close(); evtSource = null; }
-            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-        }
-
         function connectSSE() {
-            disconnect();
-
-            // Si excedió el tiempo máximo, forzar recarga de página
-            if (Date.now() - connectTime > MAX_DURATION) {
-                window.location.reload();
-                return;
-            }
-
-            connectTime = connectTime || Date.now();
+            if (evtSource) { evtSource.close(); }
             evtSource = new EventSource(BASE + '/notificaciones/stream');
 
             evtSource.addEventListener('notification', function(e) {
@@ -365,44 +339,23 @@
                 } catch(_){}
             });
 
-            evtSource.addEventListener('connected', function() {
-                currentBackoff = INITIAL_BACKOFF; // Reset backoff en éxito
-                console.log('[Notificaciones] Conectado al stream SSE');
-            });
+            evtSource.addEventListener('connected', function() {});
 
             evtSource.addEventListener('heartbeat', function() {});
 
             evtSource.onerror = function() {
                 evtSource.close();
-                // Backoff exponencial: 5s → 10s → 20s → 40s → 60s max
-                reconnectTimer = setTimeout(function() {
-                    currentBackoff = Math.min(currentBackoff * 2, MAX_BACKOFF);
-                    connectSSE();
-                }, currentBackoff);
+                reconnectTimer = setTimeout(connectSSE, 10000);
             };
         }
 
-        // Pausar SSE cuando la pestaña está oculta (ahorra recursos)
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                disconnect();
-            } else {
-                connectTime = Date.now(); // Reiniciar timer al volver
-                currentBackoff = INITIAL_BACKOFF;
-                connectSSE();
-            }
-        });
-
-        // Cargar conteo inicial
         fetch(BASE + '/notificaciones/count')
             .then(function(r) { return r.json(); })
             .then(function(d) { updateBadge(d.count || 0); })
             .catch(function(){});
 
-        // Conectar SSE
         connectSSE();
 
-        // Marcar todas como leídas al hacer clic en la campana
         var bellBtn = document.getElementById('notifBell');
         if (bellBtn) {
             bellBtn.addEventListener('click', function() {
