@@ -326,8 +326,7 @@
         let reconnectTimer = null;
         let notifCount = parseInt(bellBadge?.textContent || '0', 10);
         let currentBackoff = INITIAL_BACKOFF;
-        let connectTime = 0;
-        let notifAudio = null; // Cache de Audio object
+        let connectTime = Date.now();
 
         function updateBadge(count) {
             notifCount = count;
@@ -335,15 +334,6 @@
                 bellBadge.textContent = count;
                 bellBadge.style.display = count > 0 ? 'flex' : 'none';
             }
-        }
-
-        function getNotifAudio() {
-            if (!notifAudio) {
-                notifAudio = new Audio(BASE + '/img/notif.mp3');
-                notifAudio.volume = 0.3;
-            }
-            notifAudio.currentTime = 0;
-            notifAudio.play().catch(function(){});
         }
 
         function disconnect() {
@@ -365,14 +355,13 @@
 
             evtSource.addEventListener('notification', function(e) {
                 try {
-                    const data = JSON.parse(e.data);
+                    var data = JSON.parse(e.data);
                     if (window.Toast) {
                         var fn = Toast[data.type] || Toast.info;
                         fn(data.title + ': ' + data.message);
                     }
                     notifCount++;
                     updateBadge(notifCount);
-                    try { getNotifAudio(); } catch(_){}
                 } catch(_){}
             });
 
