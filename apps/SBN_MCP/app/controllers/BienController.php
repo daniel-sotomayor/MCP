@@ -1022,7 +1022,8 @@ class BienController extends Controller
             $row++;
         }
 
-        $refSheet = $spreadsheet->createSheet('Referencias');
+        $refSheet = $spreadsheet->createSheet(1);
+        $refSheet->setTitle('Referencias');
         $refSheet->setCellValue('A1', 'Códigos de Clasificación (columna L)');
         $refSheet->getStyle('A1')->getFont()->setBold(true);
         $r = 2;
