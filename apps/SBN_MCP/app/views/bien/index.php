@@ -44,7 +44,25 @@ require APP_PATH . '/views/partials/sidebar.php';
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 Reportes
             </a>
-            
+
+            <?php if (in_array($_SESSION['rol']??'', ['administrador','gerencia_bn','controlador_inventario'])): ?>
+            <a href="<?= $base_url ?>/bienes/exportar-excel" class="btn btn-secondary btn-sm" title="Exportar inventario completo a Excel">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar Excel
+            </a>
+            <?php endif; ?>
+
+            <?php if (in_array($_SESSION['rol']??'', ['administrador','gerencia_bn'])): ?>
+            <a href="<?= $base_url ?>/bienes/plantilla-importacion" class="btn btn-secondary btn-sm" title="Descargar plantilla para importar bienes">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Plantilla
+            </a>
+            <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('modalImportar').style.display='flex'" title="Importar bienes desde Excel">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Importar Excel
+            </button>
+            <?php endif; ?>
+
             <!-- Botón de registro (solo para roles con permiso) -->
             <?php if (in_array($_SESSION['rol']??'', ['administrador','gerencia_bn','registrador'])): ?>
             <a href="<?= $base_url ?>/bienes/nuevo" class="btn btn-success btn-sm">
@@ -52,6 +70,35 @@ require APP_PATH . '/views/partials/sidebar.php';
                 Registrar Bien
             </a>
             <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Modal Importar Excel -->
+    <div id="modalImportar" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.6); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:var(--surface,#fff); border-radius:12px; padding:2rem; max-width:520px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 style="margin:0; color:var(--text-primary,#1e293b);">Importar Inventario desde Excel</h3>
+                <button onclick="this.closest('#modalImportar').style.display='none'" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-secondary,#94a3b8);">&times;</button>
+            </div>
+            <p style="color:var(--text-secondary,#64748b); font-size:.9rem; margin-bottom:1rem;">
+                Suba un archivo <strong>.xlsx</strong> con los bienes a importar. Descargue la plantilla primero para conocer el formato requerido.
+            </p>
+            <form id="formImportar" enctype="multipart/form-data" style="margin-bottom:1rem;">
+                <input type="hidden" name="csrf_token" value="<?= $csrf_token ?? '' ?>">
+                <div style="border:2px dashed var(--border,#cbd5e1); border-radius:8px; padding:2rem; text-align:center; cursor:pointer; transition:border-color .2s;" onclick="document.getElementById('fileInput').click()" onmouseover="this.style.borderColor='var(--primary,#3b82f6)'" onmouseout="this.style.borderColor='var(--border,#cbd5e1)'">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary,#94a3b8)" stroke-width="1.5" style="margin-bottom:.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p style="margin:0; color:var(--text-secondary,#64748b);" id="fileLabel">Haga clic para seleccionar archivo .xlsx</p>
+                    <input type="file" id="fileInput" name="archivo_excel" accept=".xlsx,.xls" style="display:none" onchange="document.getElementById('fileLabel').textContent=this.files[0]?.name||'Haga clic para seleccionar archivo .xlsx'">
+                </div>
+            </form>
+            <div id="importResult" style="display:none; margin-top:1rem; padding:1rem; border-radius:8px; font-size:.9rem;"></div>
+            <div style="display:flex; gap:.5rem; justify-content:flex-end; margin-top:1rem;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="this.closest('#modalImportar').style.display='none'">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnImportar" onclick="ejecutarImportacion()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Importar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -299,3 +346,63 @@ require APP_PATH . '/views/partials/sidebar.php';
     </div>
     <?php endif; ?>
 </main>
+
+<script>
+function ejecutarImportacion() {
+    var form = document.getElementById('formImportar');
+    var fileInput = document.getElementById('fileInput');
+    var resultDiv = document.getElementById('importResult');
+    var btn = document.getElementById('btnImportar');
+
+    if (!fileInput.files.length) {
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#fef2f2';
+        resultDiv.style.color = '#991b1b';
+        resultDiv.textContent = 'Seleccione un archivo antes de importar.';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Importando...';
+    resultDiv.style.display = 'none';
+
+    var fd = new FormData(form);
+
+    fetch('<?= $base_url ?>/bienes/importar-excel', {
+        method: 'POST',
+        body: fd
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        resultDiv.style.display = 'block';
+        if (data.success) {
+            resultDiv.style.background = '#f0fdf4';
+            resultDiv.style.color = '#166534';
+            var msg = 'Importación completada.<br>';
+            msg += '<strong>' + data.insertados + '</strong> insertados, ';
+            msg += '<strong>' + data.actualizados + '</strong> actualizados.';
+            if (data.errores.length > 0) {
+                msg += '<br><br>Errores:<br><ul style="margin:0;padding-left:1.2rem;">';
+                data.errores.forEach(function(e) { msg += '<li>' + e + '</li>'; });
+                msg += '</ul>';
+            }
+            resultDiv.innerHTML = msg;
+            setTimeout(function() { location.reload(); }, 2500);
+        } else {
+            resultDiv.style.background = '#fef2f2';
+            resultDiv.style.color = '#991b1b';
+            resultDiv.textContent = data.error || 'Error al importar';
+        }
+    })
+    .catch(function() {
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#fef2f2';
+        resultDiv.style.color = '#991b1b';
+        resultDiv.textContent = 'Error de conexión con el servidor.';
+    })
+    .finally(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Importar';
+    });
+}
+</script>

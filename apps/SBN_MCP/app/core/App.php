@@ -107,6 +107,14 @@ class App
         $this->router->put('/bienes/:id',        ['App\Controllers\BienController', 'update'],
             ['auth', 'role:administrador,gerencia_bn,controlador_inventario']);
 
+        // ── Bienes — Importar/Exportar Excel ─────────────────────────────────
+        $this->router->get('/bienes/exportar-excel', ['App\Controllers\BienController', 'exportExcel'],
+            ['auth', 'role:administrador,gerencia_bn,controlador_inventario']);
+        $this->router->get('/bienes/plantilla-importacion', ['App\Controllers\BienController', 'downloadTemplate'],
+            ['auth', 'role:administrador,gerencia_bn']);
+        $this->router->post('/bienes/importar-excel', ['App\Controllers\BienController', 'importExcel'],
+            ['auth', 'role:administrador,gerencia_bn']);
+
         // ── Bienes — Desincorporar (solo gerencia_bn) ─────────────────────────
         $this->router->delete('/bienes/:id', ['App\Controllers\BienController', 'destroy'],
             ['auth', 'role:administrador,gerencia_bn']);

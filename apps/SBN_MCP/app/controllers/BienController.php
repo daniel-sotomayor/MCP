@@ -880,9 +880,463 @@ class BienController extends Controller
                 'origen'  => $origen,
                 'destino' => $destino,
                 'usuario' => Session::get('user_id'),
-                'motivo'  => 'Incorporación inicial del bien',
+                 'motivo'  => 'Incorporación inicial del bien',
             ]
         );
+    }
+
+    // ── EXPORTACIÓN A EXCEL ──────────────────────────────────────────────────
+
+    public function exportExcel(): void
+    {
+        $bienes = Database::fetchAll(
+            "SELECT b.*, tb.codigo AS tipo_codigo, tb.nombre AS tipo_nombre,
+                    e.nombre AS estado_nombre,
+                    CONCAT_WS(' / ', a.edificio, a.piso, a.nombre_area) AS area_completa
+             FROM bienes b
+             LEFT JOIN tipos_bien tb ON b.id_tipo = tb.id_tipo
+             LEFT JOIN estados e ON b.id_estado = e.id_estado
+             LEFT JOIN areas a ON b.id_area = a.id_area
+             ORDER BY b.codigo_sudebip"
+        );
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Inventario');
+
+        $headers = [
+            'Código SUDEBIP', 'Código Interno', 'Cód. Ministerio', 'Nro. Bien Min.',
+            'Nombre', 'Descripción', 'Serial', 'Marca', 'Modelo', 'Color',
+            'Año Fabricación', 'Cantidad', 'Condición Inicial', 'Clasificación',
+            'Estado', 'Área / Ubicación', 'CIN Edificio', 'CIN Piso',
+            'CIN Departamento', 'CIN Oficina', 'CIN Posición',
+            'Nro. Factura', 'Fecha Adquisición', 'Valor Inicial (Bs.)',
+            'Valor Residual (Bs.)', 'Vida Útil (años)', 'Responsable', 'Cédula Resp.',
+            'Observaciones'
+        ];
+
+        $col = 1;
+        foreach ($headers as $header) {
+            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . '1';
+            $sheet->setCellValue($cell, $header);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+            $sheet->getStyle($cell)->getFill()->getStartColor()->setRGB('1E3A5F');
+            $sheet->getStyle($cell)->getFont()->getColor()->setRGB('FFFFFF');
+            $col++;
+        }
+
+        $row = 2;
+        foreach ($bienes as $b) {
+            $sheet->setCellValue('A' . $row, $b['codigo_sudebip'] ?? '');
+            $sheet->setCellValue('B' . $row, $b['codigo_interno'] ?? '');
+            $sheet->setCellValue('C' . $row, $b['codigo_ministerio'] ?? '');
+            $sheet->setCellValue('D' . $row, $b['nro_bien_ministerio'] ?? '');
+            $sheet->setCellValue('E' . $row, $b['nombre'] ?? '');
+            $sheet->setCellValue('F' . $row, $b['descripcion'] ?? '');
+            $sheet->setCellValue('G' . $row, $b['serial'] ?? '');
+            $sheet->setCellValue('H' . $row, $b['marca'] ?? '');
+            $sheet->setCellValue('I' . $row, $b['modelo'] ?? '');
+            $sheet->setCellValue('J' . $row, $b['color'] ?? '');
+            $sheet->setCellValue('K' . $row, $b['anio_fabricacion'] ?? '');
+            $sheet->setCellValue('L' . $row, $b['cantidad'] ?? 1);
+            $sheet->setCellValue('M' . $row, $b['condicion_inicial'] ?? '');
+            $sheet->setCellValue('N' . $row, ($b['tipo_codigo'] ?? '') . ' - ' . ($b['tipo_nombre'] ?? ''));
+            $sheet->setCellValue('O' . $row, $b['estado_nombre'] ?? '');
+            $sheet->setCellValue('P' . $row, $b['area_completa'] ?? '');
+            $sheet->setCellValue('Q' . $row, $b['cin_edificio'] ?? '');
+            $sheet->setCellValue('R' . $row, $b['cin_piso'] ?? '');
+            $sheet->setCellValue('S' . $row, $b['cin_departamento'] ?? '');
+            $sheet->setCellValue('T' . $row, $b['cin_oficina'] ?? '');
+            $sheet->setCellValue('U' . $row, $b['cin_posicion'] ?? '');
+            $sheet->setCellValue('V' . $row, $b['numero_factura'] ?? '');
+            $sheet->setCellValue('W' . $row, $b['fecha_adquisicion'] ?? '');
+            $sheet->setCellValue('X' . $row, $b['valor_inicial'] ?? 0);
+            $sheet->setCellValue('Y' . $row, $b['valor_residual'] ?? 0);
+            $sheet->setCellValue('Z' . $row, $b['vida_util_anos'] ?? 10);
+            $sheet->setCellValue('AA' . $row, $b['responsable_nombre'] ?? '');
+            $sheet->setCellValue('AB' . $row, $b['responsable_cedula'] ?? '');
+            $sheet->setCellValue('AC' . $row, $b['observaciones'] ?? '');
+            $row++;
+        }
+
+        for ($i = 1; $i <= count($headers); $i++) {
+            $sheet->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i))->setAutoSize(true);
+        }
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="inventario_' . date('Ymd_His') . '.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+
+    // ── PLANTILLA PARA IMPORTACIÓN ───────────────────────────────────────────
+
+    public function downloadTemplate(): void
+    {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Plantilla Importación');
+
+        $tipos = Database::fetchAll("SELECT codigo, nombre FROM tipos_bien WHERE activo = TRUE ORDER BY codigo");
+        $estados = Database::fetchAll("SELECT id_estado, nombre FROM estados ORDER BY id_estado");
+        $areas = Database::fetchAll("SELECT id_area, CONCAT(edificio,' / ',piso,' / ',nombre_area) AS nombre FROM areas WHERE activa = TRUE ORDER BY edificio, piso, nombre_area");
+
+        $headers = [
+            'Cód. Ministerio*', 'Nro. Bien Min.', 'Nombre*', 'Descripción',
+            'Serial', 'Marca', 'Modelo', 'Color', 'Año Fabricación',
+            'Cantidad', 'Condición Inicial', 'Cód. Clasificación*', 'Estado*',
+            'Área (ID)*', 'CIN Edificio', 'CIN Piso', 'CIN Departamento',
+            'CIN Oficina', 'CIN Posición', 'Nro. Factura', 'Fecha Adquisición',
+            'Valor Inicial (Bs.)', 'Vida Útil (años)', 'Responsable Nombre',
+            'Responsable Cédula', 'Observaciones'
+        ];
+
+        $col = 1;
+        foreach ($headers as $header) {
+            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . '1';
+            $sheet->setCellValue($cell, $header);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+            $sheet->getStyle($cell)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID);
+            $sheet->getStyle($cell)->getFill()->getStartColor()->setRGB('1E3A5F');
+            $sheet->getStyle($cell)->getFont()->getColor()->setRGB('FFFFFF');
+            $col++;
+        }
+
+        $row = 2;
+        foreach ($tipos as $t) {
+            $sheet->setCellValue('L' . $row, $t['codigo'] . ' - ' . $t['nombre']);
+            $row++;
+        }
+        $row = 2;
+        foreach ($estados as $e) {
+            $sheet->setCellValue('M' . $row, $e['id_estado'] . ' - ' . $e['nombre']);
+            $row++;
+        }
+        $row = 2;
+        foreach ($areas as $a) {
+            $sheet->setCellValue('N' . $row, $a['id_area'] . ' - ' . $a['nombre']);
+            $row++;
+        }
+
+        $refSheet = $spreadsheet->createSheet('Referencias');
+        $refSheet->setCellValue('A1', 'Códigos de Clasificación (columna L)');
+        $refSheet->getStyle('A1')->getFont()->setBold(true);
+        $r = 2;
+        foreach ($tipos as $t) {
+            $refSheet->setCellValue('A' . $r, $t['codigo']);
+            $refSheet->setCellValue('B' . $r, $t['nombre']);
+            $r++;
+        }
+        $r++;
+        $refSheet->setCellValue('A' . $r, 'Estados (columna M)');
+        $refSheet->getStyle('A' . $r)->getFont()->setBold(true);
+        $r++;
+        foreach ($estados as $e) {
+            $refSheet->setCellValue('A' . $r, $e['id_estado']);
+            $refSheet->setCellValue('B' . $r, $e['nombre']);
+            $r++;
+        }
+        $r++;
+        $refSheet->setCellValue('A' . $r, 'Áreas (columna N)');
+        $refSheet->getStyle('A' . $r)->getFont()->setBold(true);
+        $r++;
+        foreach ($areas as $a) {
+            $refSheet->setCellValue('A' . $r, $a['id_area']);
+            $refSheet->setCellValue('B' . $r, $a['nombre']);
+            $r++;
+        }
+
+        $refSheet->getColumnDimension('A')->setAutoSize(true);
+        $refSheet->getColumnDimension('B')->setAutoSize(true);
+
+        for ($i = 1; $i <= count($headers); $i++) {
+            $sheet->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i))->setAutoSize(true);
+        }
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="plantilla_importacion_bienes.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+
+    // ── IMPORTACIÓN MASIVA ───────────────────────────────────────────────────
+
+    public function importExcel(): void
+    {
+        if (!$this->verifyCSRF()) {
+            $this->json(['error' => 'Token de seguridad inválido'], 403);
+            return;
+        }
+
+        if (empty($_FILES['archivo_excel']['tmp_name'])) {
+            $this->json(['error' => 'No se proporcionó ningún archivo'], 400);
+            return;
+        }
+
+        $file = $_FILES['archivo_excel'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['xlsx', 'xls'])) {
+            $this->json(['error' => 'Formato no válido. Use archivos .xlsx o .xls'], 400);
+            return;
+        }
+
+        if ($file['size'] > 10 * 1024 * 1024) {
+            $this->json(['error' => 'El archivo excede 10 MB'], 400);
+            return;
+        }
+
+        try {
+            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+            $spreadsheet = $reader->load($file['tmp_name']);
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+
+            if (count($rows) < 2) {
+                $this->json(['error' => 'El archivo está vacío o no tiene datos'], 400);
+                return;
+            }
+
+            $tiposMap = [];
+            $tipos = Database::fetchAll("SELECT id_tipo, codigo FROM tipos_bien WHERE activo = TRUE");
+            foreach ($tipos as $t) {
+                $code = trim(explode(' - ', $t['codigo'])[0]);
+                $tiposMap[$code] = $t['id_tipo'];
+                $tiposMap[strtolower($code)] = $t['id_tipo'];
+            }
+
+            $estadosMap = [];
+            $estados = Database::fetchAll("SELECT id_estado, nombre FROM estados");
+            foreach ($estados as $e) {
+                $estadosMap[strtolower(trim($e['nombre']))] = $e['id_estado'];
+                $estadosMap[(string)$e['id_estado']] = $e['id_estado'];
+            }
+
+            $areasMap = [];
+            $areas = Database::fetchAll("SELECT id_area FROM areas WHERE activa = TRUE");
+            foreach ($areas as $a) {
+                $areasMap[(string)$a['id_area']] = $a['id_area'];
+            }
+
+            $insertados = 0;
+            $actualizados = 0;
+            $errores = [];
+            $headers = array_map('strtolower', array_map('trim', $rows[0]));
+            unset($rows[0]);
+
+            Database::beginTransaction();
+
+            foreach ($rows as $idx => $row) {
+                $linea = $idx + 2;
+                $data = array_combine($headers, $row);
+
+                $codMinisterio = trim($data['cód. ministerio*'] ?? $data['cód. ministerio'] ?? $data['codigo_ministerio'] ?? '');
+                $nombre = trim($data['nombre*'] ?? $data['nombre'] ?? '');
+
+                if (empty($codMinisterio) || empty($nombre)) {
+                    $errores[] = "Línea {$linea}: Código ministerio y Nombre son obligatorios";
+                    continue;
+                }
+
+                $tipoRaw = trim($data['cód. clasificación*'] ?? $data['cód. clasificación'] ?? $data['clasificacion'] ?? '');
+                $tipoCode = explode(' - ', $tipoRaw)[0];
+                $idTipo = $tiposMap[$tipoCode] ?? $tiposMap[strtolower($tipoCode)] ?? null;
+
+                $estadoRaw = trim($data['estado*'] ?? $data['estado'] ?? '');
+                $estadoId = $estadosMap[strtolower($estadoRaw)] ?? $estadosMap[trim($estadoRaw)] ?? null;
+
+                $areaRaw = trim($data['área (id)*'] ?? $data['area (id)'] ?? $data['area'] ?? '');
+                $areaId = $areasMap[trim(explode(' - ', $areaRaw)[0])] ?? null;
+
+                if (!$idTipo) {
+                    $errores[] = "Línea {$linea}: Clasificación no válida '{$tipoRaw}'";
+                    continue;
+                }
+                if (!$estadoId) {
+                    $errores[] = "Línea {$linea}: Estado no válido '{$estadoRaw}'";
+                    continue;
+                }
+                if (!$areaId) {
+                    $errores[] = "Línea {$linea}: Área no válida '{$areaRaw}'";
+                    continue;
+                }
+
+                $existe = Database::fetch(
+                    "SELECT id_bien FROM bienes WHERE codigo_ministerio = :cod",
+                    ['cod' => $codMinisterio]
+                );
+
+                $nroBien = trim($data['nro. bien min.'] ?? $data['nro_bien_ministerio'] ?? '');
+                $esSn = ($nroBien === 'S/N' || $nroBien === '');
+                $nroFinal = $esSn ? 'S/N' : $nroBien;
+
+                $valorInicial = floatval($data['valor inicial (bs.)'] ?? $data['valor_inicial'] ?? 0);
+                $vidaUtil = intval($data['vida útil (años)'] ?? $data['vida_util_anos'] ?? 10);
+
+                $params = [
+                    'cod_min'          => $codMinisterio,
+                    'nro_bien'         => $nroFinal,
+                    'es_sn'            => $esSn ? 1 : 0,
+                    'nombre'           => $nombre,
+                    'descripcion'      => trim($data['descripción'] ?? $data['descripcion'] ?? ''),
+                    'serial'           => trim($data['serial'] ?? ''),
+                    'marca'            => trim($data['marca'] ?? ''),
+                    'modelo'           => trim($data['modelo'] ?? ''),
+                    'color'            => trim($data['color'] ?? ''),
+                    'anio_fab'         => !empty($data['año fabricación']) ? intval($data['año fabricación']) : null,
+                    'cantidad'         => !empty($data['cantidad']) ? intval($data['cantidad']) : 1,
+                    'condicion'        => trim($data['condición inicial'] ?? $data['condicion_inicial'] ?? '') ?: null,
+                    'id_tipo'          => $idTipo,
+                    'id_estado'        => $estadoId,
+                    'id_area'          => $areaId,
+                    'nro_factura'      => trim($data['nro. factura'] ?? $data['numero_factura'] ?? ''),
+                    'fecha_adq'        => trim($data['fecha adquisición'] ?? $data['fecha_adquisicion'] ?? '') ?: null,
+                    'valor_inicial'    => $valorInicial,
+                    'valor_residual'   => floatval($data['valor residual'] ?? $data['valor_residual'] ?? 0),
+                    'vida_util'        => $vidaUtil,
+                    'responsable_nom'  => trim($data['responsable nombre'] ?? $data['responsable_nombre'] ?? ''),
+                    'responsable_ced'  => trim($data['responsable cédula'] ?? $data['responsable_cedula'] ?? ''),
+                    'observaciones'    => trim($data['observaciones'] ?? ''),
+                    'cin_edificio'     => trim($data['cin edificio'] ?? $data['cin_edificio'] ?? ''),
+                    'cin_piso'         => trim($data['cin piso'] ?? $data['cin_piso'] ?? ''),
+                    'cin_departamento' => trim($data['cin departamento'] ?? $data['cin_departamento'] ?? ''),
+                    'cin_oficina'      => trim($data['cin oficina'] ?? $data['cin_oficina'] ?? ''),
+                    'cin_posicion'     => trim($data['cin posición'] ?? $data['cin_posicion'] ?? ''),
+                ];
+
+                if ($existe) {
+                    Database::query(
+                        "UPDATE bienes SET
+                            nro_bien_ministerio=:nro, es_sn=:es_sn, nombre=:nom, descripcion=:desc,
+                            serial=:serial, marca=:marca, modelo=:modelo, color=:color,
+                            anio_fabricacion=:anio, cantidad=:cant, condicion_inicial=:cond,
+                            id_tipo=:tipo, id_estado=:estado, id_area=:area,
+                            nro_factura=:fact, fecha_adquisicion=:fecha, valor_inicial=:val,
+                            valor_residual=:vres, vida_util_anos=:vida,
+                            responsable_nombre=:rnom, responsable_cedula=:rced,
+                            observaciones=:obs, cin_edificio=:cie, cin_piso=:cip,
+                            cin_departamento=:cid, cin_oficina=:cio, cin_posicion=:cipos
+                         WHERE codigo_ministerio=:cod_min",
+                        [
+                            'nro'     => $params['nro_bien'],
+                            'es_sn'   => $params['es_sn'],
+                            'nom'     => $params['nombre'],
+                            'desc'    => $params['descripcion'],
+                            'serial'  => $params['serial'],
+                            'marca'   => $params['marca'],
+                            'modelo'  => $params['modelo'],
+                            'color'   => $params['color'],
+                            'anio'    => $params['anio_fab'],
+                            'cant'    => $params['cantidad'],
+                            'cond'    => $params['condicion'],
+                            'tipo'    => $params['id_tipo'],
+                            'estado'  => $params['id_estado'],
+                            'area'    => $params['id_area'],
+                            'fact'    => $params['nro_factura'],
+                            'fecha'   => $params['fecha_adq'],
+                            'val'     => $params['valor_inicial'],
+                            'vres'    => $params['valor_residual'],
+                            'vida'    => $params['vida_util'],
+                            'rnom'    => $params['responsable_nom'],
+                            'rced'    => $params['responsable_ced'],
+                            'obs'     => $params['observaciones'],
+                            'cie'     => $params['cin_edificio'],
+                            'cip'     => $params['cin_piso'],
+                            'cid'     => $params['cin_departamento'],
+                            'cio'     => $params['cin_oficina'],
+                            'cipos'   => $params['cin_posicion'],
+                            'cod_min' => $params['cod_min'],
+                        ]
+                    );
+                    $actualizados++;
+                } else {
+                    $area = Database::fetch("SELECT edificio, piso, nombre_area FROM areas WHERE id_area = :id", ['id' => $areaId]);
+                    $codigoInterno = $this->generarCodigoInterno(
+                        $params['id_tipo'], $params['id_area'], $area
+                    );
+
+                    Database::query(
+                        "INSERT INTO bienes (
+                            codigo_sudebip, codigo_interno, codigo_ministerio, nro_bien_ministerio, es_sn,
+                            serial, nombre, descripcion, marca, modelo, color, anio_fabricacion,
+                            numero_factura, fecha_adquisicion, valor_inicial, valor_residual,
+                            vida_util_anos, id_estado, id_tipo, id_area,
+                            responsable_nombre, responsable_cedula, cantidad, observaciones, condicion_inicial,
+                            cin_edificio, cin_piso, cin_departamento, cin_oficina, cin_posicion
+                        ) VALUES (
+                            :codigo_sudebip, :codigo_interno, :codigo_ministerio, :nro_bien_ministerio, :es_sn,
+                            :serial, :nombre, :descripcion, :marca, :modelo, :color, :anio_fabricacion,
+                            :numero_factura, :fecha_adquisicion, :valor_inicial, :valor_residual,
+                            :vida_util_anos, :id_estado, :id_tipo, :id_area,
+                            :responsable_nombre, :responsable_cedula, :cantidad, :observaciones, :condicion_inicial,
+                            :cin_edificio, :cin_piso, :cin_departamento, :cin_oficina, :cin_posicion
+                        )",
+                        [
+                            'codigo_sudebip'      => $this->generarCodigoSudebip(),
+                            'codigo_interno'      => $codigoInterno,
+                            'codigo_ministerio'   => $params['cod_min'],
+                            'nro_bien_ministerio' => $params['nro_bien'],
+                            'es_sn'               => $params['es_sn'],
+                            'serial'              => $params['serial'],
+                            'nombre'              => $params['nombre'],
+                            'descripcion'         => $params['descripcion'],
+                            'marca'               => $params['marca'],
+                            'modelo'              => $params['modelo'],
+                            'color'               => $params['color'],
+                            'anio_fabricacion'    => $params['anio_fab'],
+                            'numero_factura'      => $params['nro_factura'],
+                            'fecha_adquisicion'   => $params['fecha_adq'],
+                            'valor_inicial'       => $params['valor_inicial'],
+                            'valor_residual'      => $params['valor_residual'],
+                            'vida_util_anos'      => $params['vida_util'],
+                            'id_estado'           => $params['id_estado'],
+                            'id_tipo'             => $params['id_tipo'],
+                            'id_area'             => $params['id_area'],
+                            'responsable_nombre'  => $params['responsable_nom'],
+                            'responsable_cedula'  => $params['responsable_ced'],
+                            'cantidad'            => $params['cantidad'],
+                            'observaciones'       => $params['observaciones'],
+                            'condicion_inicial'   => $params['condicion'],
+                            'cin_edificio'        => $params['cin_edificio'],
+                            'cin_piso'            => $params['cin_piso'],
+                            'cin_departamento'    => $params['cin_departamento'],
+                            'cin_oficina'         => $params['cin_oficina'],
+                            'cin_posicion'        => $params['cin_posicion'],
+                        ]
+                    );
+                    $bienId = Database::lastInsertId();
+                    $this->registrarMovimiento($bienId, 'incorporacion', null, $areaId);
+                    $insertados++;
+                }
+            }
+
+            Database::commit();
+
+            $this->logAudit('IMPORT', 'bienes', 0, [
+                'insertados' => $insertados,
+                'actualizados' => $actualizados,
+                'errores' => count($errores),
+            ]);
+
+            $this->json([
+                'success'    => true,
+                'insertados' => $insertados,
+                'actualizados' => $actualizados,
+                'errores'    => $errores,
+                'total'      => $insertados + $actualizados + count($errores),
+            ]);
+
+        } catch (\Exception $e) {
+            Database::rollBack();
+            Logger::error('import_excel_error', ['message' => $e->getMessage()]);
+            $this->json(['error' => 'Error al procesar el archivo: ' . $e->getMessage()], 500);
+        }
     }
 
 }
