@@ -311,9 +311,8 @@
     (function() {
         var BASE = <?= json_encode($base_url ?? '') ?>;
         var bellBadge = document.getElementById('notifBadge');
-        var evtSource = null;
-        var reconnectTimer = null;
         var notifCount = parseInt(bellBadge ? bellBadge.textContent : '0', 10) || 0;
+        var pollTimer = null;
 
         function updateBadge(count) {
             notifCount = count;
@@ -323,38 +322,22 @@
             }
         }
 
-        function connectSSE() {
-            if (evtSource) { evtSource.close(); }
-            evtSource = new EventSource(BASE + '/notificaciones/stream');
-
-            evtSource.addEventListener('notification', function(e) {
-                try {
-                    var data = JSON.parse(e.data);
-                    if (window.Toast) {
-                        var fn = Toast[data.type] || Toast.info;
-                        fn(data.title + ': ' + data.message);
+        function checkNotifications() {
+            fetch(BASE + '/notificaciones/count')
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    var newCount = d.count || 0;
+                    if (newCount > notifCount && window.Toast) {
+                        Toast.info('Tiene ' + newCount + ' notificación(es) nueva(s)');
                     }
-                    notifCount++;
-                    updateBadge(notifCount);
-                } catch(_){}
-            });
-
-            evtSource.addEventListener('connected', function() {});
-
-            evtSource.addEventListener('heartbeat', function() {});
-
-            evtSource.onerror = function() {
-                evtSource.close();
-                reconnectTimer = setTimeout(connectSSE, 10000);
-            };
+                    updateBadge(newCount);
+                })
+                .catch(function(){});
         }
 
-        fetch(BASE + '/notificaciones/count')
-            .then(function(r) { return r.json(); })
-            .then(function(d) { updateBadge(d.count || 0); })
-            .catch(function(){});
-
-        connectSSE();
+        // Poll cada 30 segundos
+        checkNotifications();
+        pollTimer = setInterval(checkNotifications, 30000);
 
         var bellBtn = document.getElementById('notifBell');
         if (bellBtn) {
