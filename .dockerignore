@@ -39,6 +39,8 @@ apps/SBN_MCP/scratch
 apps/SBN_MCP/scratch/**
 apps/SBN_MCP/no
 apps/SBN_MCP/no/**
+apps/SBN_MCP/sql
+apps/SBN_MCP/sql/**
 apps/SBN_MCP/docs
 apps/SBN_MCP/docs/**
 apps/SBN_MCP/tests
