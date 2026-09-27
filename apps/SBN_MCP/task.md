@@ -1,0 +1,6 @@
+- [x] Agregar el botón `#themeToggle` al pie del sidebar en `sidebar.php`
+- [x] Definir variables de tema oscuro `[data-theme="dark"]` en `app.css` (variables CSS + overrides de componentes)
+- [x] Actualizar el JavaScript de gestión de temas en `footer.php` (iconos y texto correctos)
+- [x] Corregir formularios en modo oscuro: labels, inputs, form-card, alerts, info-box
+- [x] Agregar soporte de modo claro/oscuro al login en `auth.css`
+- [ ] Verificación manual final del funcionamiento en todas las páginas
