@@ -25,17 +25,25 @@ apps/SBN_MCP/uploads/
 apps/SBN_MCP/reports/
 apps/SBN_MCP/scratch/
 apps/SBN_MCP/no/
-apps/SBN_MCP/sql/*.sql.bak
 apps/SBN_MCP/docs/generated/
+
 
 # --- Entornos virtuales y herramientas ---
 .venv/
 venv/
+.kilo/
+.blackbox/
+.agent/
+skills/
+
 
 # --- Archivos del sistema operativo ---
 Thumbs.db
 Desktop.ini
 *.log
+info.md
 
 # --- Artefactos basura ---
 nul
+
+QUICK_START.md
