@@ -1,28 +1,33 @@
-app = "mcp-hospital-cambiar-este-nombre"
-primary_region = "mia"
+# fly.toml app configuration file generated for mcp-uni on 2026-09-27T19:28:15Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'mcp-uni'
+primary_region = 'dfw'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  APP_ENV = "production"
-  APP_DEBUG = "false"
-  APP_TIMEZONE = "America/Caracas"
+  APP_DEBUG = 'false'
+  APP_ENV = 'production'
+  APP_TIMEZONE = 'America/Caracas'
+
+[[mounts]]
+  source = 'mcp_data'
+  destination = '/data'
+  initial_size = '2gb'
 
 [http_service]
   internal_port = 80
   force_https = true
+  auto_stop_machines = 'off'
   auto_start_machines = true
-  auto_stop_machines = "off"
   min_machines_running = 1
-  max_machines_running = 1
 
-[[mounts]]
-  source = "mcp_data"
-  destination = "/data"
-  initial_size = "2gb"
-
-[vm]
-  cpu_kind = "shared"
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
-  memory = "1gb"
+  memory_mb = 1024
