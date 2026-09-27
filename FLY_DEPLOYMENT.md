@@ -6,8 +6,8 @@ El despliegue usa una sola aplicacion PHP/Apache para servir el sitio del hospit
 
 - `dev` es la rama de desarrollo: cada push y pull request ejecuta Composer, validacion de sintaxis PHP, PHPCS, PHPStan y build de Docker. No despliega a Fly.io.
 - `master` es produccion: ejecuta los mismos checks y solo un push despliega a Fly.io cuando todos terminan correctamente. Un pull request hacia `master` solo valida; debe fusionarse para publicar.
-- En GitHub configura la variable de repositorio `FLY_APP_NAME` con el nombre real de la app Fly y el secreto `FLY_API_TOKEN` en el entorno `production`. No guardes tokens en el repositorio.
-- El despliegue automatico usa el nombre de `FLY_APP_NAME`; el valor `app` de `fly.toml` debe actualizarse tambien con el nombre real para que los comandos manuales funcionen.
+- En GitHub configura el secreto `FLY_API_TOKEN` en el entorno `production`. El workflow toma el nombre de app de `fly.toml`; no guardes tokens en el repositorio.
+- El valor `app` de `fly.toml` debe actualizarse con el nombre real de la aplicacion Fly antes del primer despliegue.
 
 El proyecto aun no contiene `apps/SBN_MCP/tests/run_tests.php`, aunque el script `composer test` lo referencia; el workflow no invoca ese script roto y ejecuta lint, analisis estatico, sintaxis y build hasta que se incorpore una suite de pruebas real.
 
