@@ -2,38 +2,78 @@ name: PHP Composer
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "dev" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "dev" ]
 
 permissions:
   contents: read
 
 jobs:
-  build:
-
+  checks:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: apps/SBN_MCP
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate --strict
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: gd, intl, mbstring, mysqli, pdo_mysql, zip
+          tools: composer:v2
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+      - name: Validate Composer configuration
+        run: composer validate --strict
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
 
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
+      - name: Check PHP syntax
+        run: find app config public scripts -type f -name '*.php' -print0 | xargs -0 -n1 php -l
 
-    # - name: Run test suite
-    #   run: composer run-script test
+      - name: Run PHPCS
+        run: composer run lint
+
+      - name: Run PHPStan
+        run: composer run analyze
+
+      - name: Build deployment image
+        run: docker build --tag mcp-hospital:ci .
+        working-directory: ${{ github.workspace }}
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: checks
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Fly.io CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Verify Fly.io deployment settings
+        env:
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [[ -z "$FLY_APP_NAME" ]]; then
+            echo "::error::Configure the FLY_APP_NAME repository variable."
+            exit 1
+          fi
+          if [[ -z "$FLY_API_TOKEN" ]]; then
+            echo "::error::Configure the FLY_API_TOKEN secret in the production environment."
+            exit 1
+          fi
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only --config fly.toml --app "$FLY_APP_NAME"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
