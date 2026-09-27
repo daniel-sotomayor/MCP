@@ -1,0 +1,96 @@
+app = "mcp-hospital-cambiar-este-nombre"
+primary_region = "mia"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  APP_TIMEZONE = "America/Caracas"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_start_machines = true
+  auto_stop_machines = "off"
+  min_machines_running = 1
+  max_machines_running = 1
+
+[[mounts]]
+  source = "mcp_data"
+  destination = "/data"
+  initial_size = "2gb"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "1gb"# fly.toml - Configuración para Fly.io
+# Proyecto MCP (Maternidad Concepción Palacios)
+# Contiene 2 sistemas: SBN_MCP + SRCC_MCP
+# Cada sistema tiene su propia base de datos MySQL (Fly.io managed)
+
+app = "mcp-hospital"
+primary_region = "iad"
+
+[build]
+  image = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  APP_TIMEZONE = "America/Caracas"
+  SESSION_LIFETIME = "30"
+  MAX_FILE_SIZE = "5242880"
+  APP_KEY = "CHANGE_THIS_TO_SECURE_RANDOM_KEY_32_CHARS"
+
+# Configuración de base de datos SBN_MCP (se crea con: fly mcp create -a mcp-hospital-sbn)
+[env]
+  DB_HOST_SBN = "mcp-hospital-sbn.internal"
+  DB_PORT_SBN = "3306"
+  DB_NAME_SBN = "hospital_bienes"
+  DB_USER_SBN = "root"
+  DB_PASS_SBN = "${DB_PASSWORD_SBN}"
+
+# Configuración de base de datos SRCC_MCP (se crea con: fly mcp create -a mcp-hospital-srcc)
+[env]
+  DB_HOST_SRCC = "mcp-hospital-srcc.internal"
+  DB_PORT_SRCC = "3306"
+  DB_NAME_SRCC = "hospital_citas"
+  DB_USER_SRCC = "root"
+  DB_PASS_SRCC = "${DB_PASSWORD_SRCC}"
+
+# Servidor web (PHP + Apache)
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  
+  [[http_service.checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "5s"
+    method = "GET"
+    path = "/"
+
+[processes]
+  web = "/usr/local/bin/docker-entrypoint.sh"
+
+[vm]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# Volumen persistente para uploads
+[mounts]
+  source = "mcp_uploads"
+  destination = "/var/www/html/apps/SBN_MCP/uploads"
+  
+  source = "mcp_srcc_uploads"
+  destination = "/var/www/html/apps/SRCC_MCP/uploads"
+
+# Configuración de logging
+[logging]
+  level = "info"
