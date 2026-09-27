@@ -26,7 +26,7 @@ apps/SBN_MCP/reports/
 apps/SBN_MCP/scratch/
 apps/SBN_MCP/no/
 apps/SBN_MCP/docs/generated/
-
+apps/SBN_MCP/plan.md
 
 # --- Entornos virtuales y herramientas ---
 .venv/
