@@ -2,7 +2,7 @@
     "name": "hospital-mcp/sistema-bienes",
     "description": "Sistema de Gestión de Bienes Nacionales - Maternidad Concepción Palacios",
     "type": "project",
-    "license": "GPL-3.0",
+    "license": "GPL-3.0-only",
     "require": {
         "php": ">=7.4",
         "tecnickcom/tcpdf": "^6.6",

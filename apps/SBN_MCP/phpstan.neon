@@ -4,7 +4,6 @@ parameters:
         - app
         - config
         - public/index.php
-        - tests
     excludePaths:
         - vendor/*
         - cache/*

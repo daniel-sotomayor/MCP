@@ -5,7 +5,6 @@
     <file>app</file>
     <file>config</file>
     <file>public/index.php</file>
-    <file>tests</file>
 
     <exclude-pattern>vendor/*</exclude-pattern>
     <exclude-pattern>cache/*</exclude-pattern>

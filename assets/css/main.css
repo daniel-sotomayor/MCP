@@ -153,6 +153,10 @@ h6 {
   box-shadow: 0px 0 18px rgba(0, 0, 0, 0.1);
 }
 
+.header.fixed-top {
+  position: sticky;
+}
+
 .header .topbar {
   background-color: var(--accent-color);
   height: 40px;
@@ -238,7 +242,12 @@ h6 {
 # Navigation Menu
 --------------------------------------------------------------*/
 /* Desktop Navigation */
-@media (min-width: 1200px) {
+@media (min-width: 1400px) {
+  .header .logo h1 {
+    font-size: 26px;
+    white-space: nowrap;
+  }
+
   .navmenu {
     padding: 0;
   }
@@ -257,7 +266,7 @@ h6 {
 
   .navmenu>ul>li {
     white-space: nowrap;
-    padding: 15px 14px;
+    padding: 12px 9px;
   }
 
   .navmenu>ul>li:last-child {
@@ -267,7 +276,7 @@ h6 {
   .navmenu a,
   .navmenu a:focus {
     color: var(--nav-color);
-    font-size: 15px;
+    font-size: 14px;
     padding: 0 2px;
     font-family: var(--nav-font);
     font-weight: 500;
@@ -374,8 +383,8 @@ h6 {
      background-color: var(--accent-color);
      color: var(--contrast-color);
      border-radius: 4px;
-     padding: 8px 20px;
-     margin-left: 10px;
+    padding: 8px 14px;
+    margin-left: 6px;
      font-weight: 600;
      transition: 0.3s;
      border: none;
@@ -392,7 +401,7 @@ h6 {
 }
 
 /* Mobile Navigation */
-@media (max-width: 1199px) {
+@media (max-width: 1399px) {
   .mobile-nav-toggle {
     color: var(--nav-color);
     font-size: 28px;

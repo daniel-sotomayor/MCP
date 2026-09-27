@@ -1,5 +1,5 @@
-app = "mcp-hospital-cambiar-este-nombre"
-primary_region = "mia"
+app = "mcp-uni"
+primary_region = "dfw"
 
 [build]
   dockerfile = "Dockerfile"

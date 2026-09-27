@@ -42,12 +42,21 @@ jobs:
       - name: Run PHPStan
         run: composer run analyze
 
+      - name: Ensure production branch has no docs or AI artifacts
+        if: github.ref == 'refs/heads/master'
+        run: |
+          prohibited_files=$(git ls-files | grep -E '(^|/)(\.agent|\.blackbox|\.claude|\.copilot|\.cursor|\.kilo|skills)(/|$)|(^|/)[^/]+\.md$' || true)
+          if [[ -n "$prohibited_files" ]]; then
+            printf '::error::Remove documentation and AI artifacts from master:\n%s\n' "$prohibited_files"
+            exit 1
+          fi
+
       - name: Build deployment image
         run: docker build --tag mcp-hospital:ci .
         working-directory: ${{ github.workspace }}
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.INFINITYFREE_DEPLOY_ENABLED == 'true'
     needs: checks
     runs-on: ubuntu-latest
     environment:
@@ -55,19 +64,109 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Fly.io CLI
-        uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: gd, intl, mbstring, mysqli, pdo_mysql, zip
+          tools: composer:v2
 
-      - name: Verify Fly.io deployment settings
+      - name: Install production dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress
+        working-directory: apps/SBN_MCP
+
+      - name: Verify InfinityFree deployment settings
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FTP_SERVER: ${{ secrets.INFINITYFREE_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.INFINITYFREE_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.INFINITYFREE_FTP_PASSWORD }}
+          FTP_REMOTE_DIR: ${{ secrets.INFINITYFREE_REMOTE_DIR }}
+          SBN_APP_KEY: ${{ secrets.SBN_APP_KEY }}
+          SBN_DB_HOST: ${{ secrets.SBN_DB_HOST }}
+          SBN_DB_PORT: ${{ secrets.SBN_DB_PORT }}
+          SBN_DB_NAME: ${{ secrets.SBN_DB_NAME }}
+          SBN_DB_USER: ${{ secrets.SBN_DB_USER }}
+          SBN_DB_PASS: ${{ secrets.SBN_DB_PASS }}
         run: |
-          if [[ -z "$FLY_API_TOKEN" ]]; then
-            echo "::error::Configure the FLY_API_TOKEN secret in the production environment."
-            exit 1
-          fi
+          for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD FTP_REMOTE_DIR SBN_APP_KEY SBN_DB_HOST SBN_DB_PORT SBN_DB_NAME SBN_DB_USER SBN_DB_PASS; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Configure the $name secret in the production environment."
+              exit 1
+            fi
+          done
 
-      - name: Deploy to Fly.io
-        run: flyctl deploy --remote-only --config fly.toml
+      - name: Create runtime environment file
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          SBN_APP_KEY: ${{ secrets.SBN_APP_KEY }}
+          SBN_DB_HOST: ${{ secrets.SBN_DB_HOST }}
+          SBN_DB_PORT: ${{ secrets.SBN_DB_PORT }}
+          SBN_DB_NAME: ${{ secrets.SBN_DB_NAME }}
+          SBN_DB_USER: ${{ secrets.SBN_DB_USER }}
+          SBN_DB_PASS: ${{ secrets.SBN_DB_PASS }}
+        run: |
+          {
+            printf '%s\n' 'APP_ENV=production' 'APP_DEBUG=false' 'APP_TIMEZONE=America/Caracas'
+            printf 'APP_KEY=%s\n' "$SBN_APP_KEY"
+            printf 'DB_HOST=%s\n' "$SBN_DB_HOST"
+            printf 'DB_PORT=%s\n' "$SBN_DB_PORT"
+            printf 'DB_NAME=%s\n' "$SBN_DB_NAME"
+            printf 'DB_USER=%s\n' "$SBN_DB_USER"
+            printf 'DB_PASS=%s\n' "$SBN_DB_PASS"
+          } > apps/SBN_MCP/.env
+          chmod 600 apps/SBN_MCP/.env
+
+      - name: Deploy to InfinityFree over FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.INFINITYFREE_FTP_SERVER }}
+          username: ${{ secrets.INFINITYFREE_FTP_USERNAME }}
+          password: ${{ secrets.INFINITYFREE_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          server-dir: ${{ secrets.INFINITYFREE_REMOTE_DIR }}
+          local-dir: ./
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.github/**
+            **/.venv/**
+            **/.agent/**
+            **/.blackbox/**
+            **/.claude/**
+            **/.copilot/**
+            **/.cursor/**
+            **/.kilo/**
+            **/skills/**
+            **/*.md
+            **/*.sql
+            **/*.sql.gz
+            **/*.dump
+            **/.env.example
+            **/.env.*.local
+            apps/SBN_MCP/backups/**
+            apps/SBN_MCP/cache/**
+            apps/SBN_MCP/docs/**
+            apps/SBN_MCP/logs/**
+            apps/SBN_MCP/no/**
+            apps/SBN_MCP/reports/**
+            apps/SBN_MCP/scratch/**
+            apps/SBN_MCP/tests/**
+            apps/SBN_MCP/uploads/**
+            apps/SBN_MCP/sql/**
+            apps/SBN_MCP/composer.json
+            apps/SBN_MCP/composer.lock
+            apps/SBN_MCP/phpcs.xml
+            apps/SBN_MCP/phpstan.neon
+            .dockerignore
+            .gitignore
+            Dockerfile
+            docker-entrypoint.sh
+            fly.toml
+            deploy/**
+        env:
+          FTP_SERVER: ${{ secrets.INFINITYFREE_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.INFINITYFREE_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.INFINITYFREE_FTP_PASSWORD }}
+          FTP_REMOTE_DIR: ${{ secrets.INFINITYFREE_REMOTE_DIR }}
