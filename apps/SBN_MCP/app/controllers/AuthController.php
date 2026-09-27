@@ -277,18 +277,20 @@ class AuthController extends Controller
 
     private function logAuditAuth(string $action, int $userId): void
     {
-        // Insertar directamente para evitar la verificación de sesión del AuditTrait
-        // (en login, la sesión ya está establecida; en logout, también)
-        Database::query(
-            "INSERT INTO auditoria (tabla_afectada, registro_id, accion, usuario_id, ip_address, user_agent)
-             VALUES ('usuarios', :r, :a, :u, :ip, :ua)",
-            [
-                'r'  => $userId,
-                'a'  => $action,
-                'u'  => $userId,
-                'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
-                'ua' => $_SERVER['HTTP_USER_AGENT'] ?? '',
-            ]
-        );
+        try {
+            Database::query(
+                "INSERT INTO auditoria (tabla_afectada, registro_id, accion, usuario_id, ip_address, user_agent)
+                 VALUES ('usuarios', :r, :a, :u, :ip, :ua)",
+                [
+                    'r'  => $userId,
+                    'a'  => $action,
+                    'u'  => $userId,
+                    'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+                    'ua' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+                ]
+            );
+        } catch (\Throwable $e) {
+            Logger::error('Error registrando auditoría de auth: ' . $e->getMessage());
+        }
     }
 }

@@ -260,7 +260,7 @@ class Router
         } catch (\Throwable $e) {
             Logger::error('Controller error [' . $controllerName . '::' . $action . ']: ' . $e->getMessage());
             http_response_code(500);
-            $debug = getenv('APP_DEBUG') === 'true';
+            $debug = filter_var(getenv('APP_DEBUG') ?: 'true', FILTER_VALIDATE_BOOLEAN);
             if ($debug) {
                 echo '<h1>Error</h1><p>' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
                 echo '<pre>' . htmlspecialchars($e->getTraceAsString(), ENT_QUOTES, 'UTF-8') . '</pre>';

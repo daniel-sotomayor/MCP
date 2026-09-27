@@ -362,12 +362,33 @@ h6 {
     visibility: hidden;
   }
 
-  .navmenu .dropdown .dropdown:hover>ul {
-    opacity: 1;
-    top: 0;
-    left: -100%;
-    visibility: visible;
-  }
+   .navmenu .dropdown .dropdown:hover>ul {
+     opacity: 1;
+     top: 0;
+     left: -100%;
+     visibility: visible;
+   }
+
+  /* Citas Button - highlighted CTA in main nav */
+   .navmenu>ul>li>a.btn-cita {
+     background-color: var(--accent-color);
+     color: var(--contrast-color);
+     border-radius: 4px;
+     padding: 8px 20px;
+     margin-left: 10px;
+     font-weight: 600;
+     transition: 0.3s;
+     border: none;
+   }
+
+   .navmenu>ul>li>a.btn-cita:hover {
+     background-color: color-mix(in srgb, var(--accent-color), transparent 15%);
+     color: var(--contrast-color);
+   }
+
+   .navmenu>ul>li>a.btn-cita.active {
+     color: var(--contrast-color);
+   }
 }
 
 /* Mobile Navigation */
@@ -4952,6 +4973,107 @@ section,
   .featured-testimonials .testimonial-item {
     margin: 0;
   }
+}
+
+/*--------------------------------------------------------------
+# Docencia Section
+--------------------------------------------------------------*/
+.docencia .docencia-intro p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--default-color);
+  font-style: italic;
+}
+
+.docencia .docencia-card {
+  background-color: var(--surface-color);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: 0.3s;
+  height: 100%;
+  text-align: center;
+}
+
+.docencia .docencia-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-5px);
+}
+
+.docencia .docencia-card .card-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent-color), transparent 85%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--accent-color);
+}
+
+.docencia .docencia-card h3 {
+  font-family: var(--heading-font);
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.docencia .docencia-card p {
+  color: var(--default-color);
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.docencia .docencia-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.docencia .docencia-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 0.9rem;
+  color: var(--default-color);
+}
+
+.docencia .docencia-list li:last-child {
+  border-bottom: none;
+}
+
+.docencia .docencia-list li i {
+  color: var(--accent-color);
+  margin-right: 8px;
+}
+
+.docencia .highlight-quote {
+  background: color-mix(in srgb, var(--accent-color), transparent 90%);
+  border-left: 4px solid var(--accent-color);
+  border-radius: 8px;
+  padding: 25px 30px;
+  text-align: center;
+}
+
+.docencia .highlight-quote .quote-content p {
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.docencia .docencia-stats .stat-item .stat-number {
+  font-family: var(--heading-font);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  display: block;
+}
+
+.docencia .docencia-stats .stat-item .stat-label {
+  font-size: 0.85rem;
+  color: var(--default-color);
+  font-family: var(--nav-font);
 }
 
 /*--------------------------------------------------------------
