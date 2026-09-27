@@ -11,6 +11,7 @@ return [
     'database' => getenv('DB_NAME') ?: 'hospital_bienes',
     'username' => getenv('DB_USER') ?: 'root',
     'password' => (getenv('DB_PASS') !== false) ? getenv('DB_PASS') : '',
+    'ssl_ca' => getenv('DB_SSL_CA') ?: null,
     'charset' => 'utf8mb4',
     'collation' => 'utf8mb4_unicode_ci',
     'options' => [

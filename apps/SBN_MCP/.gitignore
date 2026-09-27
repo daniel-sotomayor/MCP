@@ -14,6 +14,7 @@
 # ── Dependencias (regenerables con composer install) ─────────────────────────
 /vendor/
 /composer.lock
+!/composer.lock
 # NOTA: composer.lock debe commitearse en aplicaciones (no librerías) para
 # garantizar builds reproducibles. Lo incluimos para producción.
 

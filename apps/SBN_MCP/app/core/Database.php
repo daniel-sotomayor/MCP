@@ -50,13 +50,20 @@ class Database
                 $config['database']
             );
 
-            self::$connection = new PDO($dsn, $config['username'], $config['password'], [
+            $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
                 PDO::ATTR_PERSISTENT         => false,
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
-            ]);
+            ];
+
+            if (!empty($config['ssl_ca'])) {
+                $options[PDO::MYSQL_ATTR_SSL_CA] = $config['ssl_ca'];
+                $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+            }
+
+            self::$connection = new PDO($dsn, $config['username'], $config['password'], $options);
 
             return self::$connection;
         } catch (PDOException $e) {

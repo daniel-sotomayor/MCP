@@ -6,10 +6,6 @@
 # Habilitar RewriteEngine
 RewriteEngine On
 
-# Establecer base
-# RewriteBase /SBN_MCP/public/
-RewriteBase /MCP/apps/SBN_MCP/public/
-
 # Bloquear acceso a archivos sensibles y de configuración
 <FilesMatch "(^#.*#|\.(bak|conf|dist|fla|in[ci]|log|psd|sh|sql|sw[op]|env|git|svn|htaccess|htpasswd)|~)$">
     Require all denied
@@ -119,7 +115,6 @@ RewriteRule ^(.*)$ index.php [QSA,L]
     php_value max_execution_time 300
     php_value memory_limit 256M
     php_value session.cookie_httponly 1
-    php_value session.cookie_secure 0
     php_value session.use_only_cookies 1
     php_value session.cookie_samesite Strict
 </IfModule>
